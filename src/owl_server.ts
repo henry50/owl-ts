@@ -1,5 +1,6 @@
 import BigNumber from "bignumber.js";
 import { OwlCommon, ZKP, ZKPVerificationFailure } from "./owl_common.js"
+import { AuthFinishRequest, AuthInitRequest, AuthInitResponse, RegistrationRequest, UserCredentials } from "./messages.js";
 
 interface ServerInitVals{
     username: string;
@@ -20,19 +21,15 @@ interface ServerInitVals{
 
 export class OwlServer extends OwlCommon {
     initValues!: ServerInitVals;
-    async register(){
+    async register(request: RegistrationRequest){
         const x3 = this.rand(BigNumber(1), this.config.q.minus(1));
         const X3 = this.config.g.pow(x3, this.config.p);
         const PI3 = await this.createZKP(x3, this.config.g, X3, this.config.serverId);
-        return {
-            X3: X3,
-            PI3:{
-                h: PI3.h,
-                r: PI3.r
-            }
-        }
+        return new UserCredentials(X3, PI3, request.pi, request.T);
     }
-    async authInit(username: string, pi: BigNumber, T: BigNumber, X1: BigNumber, X2: BigNumber, X3: BigNumber, PI1: ZKP, PI2: ZKP, PI3: ZKP){
+    async authInit(username: string, request: AuthInitRequest, credentials: UserCredentials): Promise<AuthInitResponse> {
+        const {X1, X2, PI1, PI2} = request;
+        const {X3, PI3, pi, T} = credentials;
         if(!(
             await this.verifyZKP(PI1, this.config.g, X1, username) &&
             await this.verifyZKP(PI2, this.config.g, X2, username)
@@ -51,10 +48,11 @@ export class OwlServer extends OwlCommon {
         const PIBeta = await this.createZKP(secret, betaGen, beta, this.config.serverId);
         // keep values for authFinish (this should probably be changed to store in database)
         this.initValues = {username, T, pi, x4, X1, X2, X3, X4, beta, PI1, PI2, PI3, PIBeta};
-        return {X4, PI4, beta, PIBeta};
+        return new AuthInitResponse(X3, X4, PI3, PI4, beta, PIBeta);
     }
-    async authFinish(alpha: BigNumber, PIAlpha: ZKP, r: BigNumber): Promise<BigNumber | false>{
+    async authFinish(request: AuthFinishRequest): Promise<BigNumber | false>{
         const { username, T, pi, x4, X1, X2, X3, X4, beta, PI1, PI2, PI3, PIBeta } = this.initValues;
+        const {alpha, PIAlpha, r} = request;
         if(!await this.verifyZKP(PIAlpha, X1.times(X3).times(X4), alpha, username)){
             throw new ZKPVerificationFailure();
         }

@@ -6,13 +6,15 @@
   "type": "module",
   "types": "./lib/index.d.ts",
   "scripts": {
-    "build": "npx tsc",
+    "build": "npx tsx ./src/_messagesGenerator.ts && npx tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/node": "^20.11.17",
+    "tsx": "^4.7.1",
     "typescript": "^5.3.3"
   },
   "dependencies": {

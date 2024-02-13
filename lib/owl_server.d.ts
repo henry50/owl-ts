@@ -1,5 +1,6 @@
 import BigNumber from "bignumber.js";
 import { OwlCommon, ZKP } from "./owl_common.js";
+import { AuthFinishRequest, AuthInitRequest, AuthInitResponse, RegistrationRequest, UserCredentials } from "./messages.js";
 interface ServerInitVals {
     username: string;
     T: BigNumber;
@@ -17,20 +18,9 @@ interface ServerInitVals {
 }
 export declare class OwlServer extends OwlCommon {
     initValues: ServerInitVals;
-    register(): Promise<{
-        X3: BigNumber;
-        PI3: {
-            h: BigNumber;
-            r: BigNumber;
-        };
-    }>;
-    authInit(username: string, pi: BigNumber, T: BigNumber, X1: BigNumber, X2: BigNumber, X3: BigNumber, PI1: ZKP, PI2: ZKP, PI3: ZKP): Promise<{
-        X4: BigNumber;
-        PI4: ZKP;
-        beta: BigNumber;
-        PIBeta: ZKP;
-    }>;
-    authFinish(alpha: BigNumber, PIAlpha: ZKP, r: BigNumber): Promise<BigNumber | false>;
+    register(request: RegistrationRequest): Promise<UserCredentials>;
+    authInit(username: string, request: AuthInitRequest, credentials: UserCredentials): Promise<AuthInitResponse>;
+    authFinish(request: AuthFinishRequest): Promise<BigNumber | false>;
 }
 export {};
 //# sourceMappingURL=owl_server.d.ts.map
