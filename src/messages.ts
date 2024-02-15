@@ -15,11 +15,20 @@ function parseNum(x: any): BigNumber | null {
 }
 
 function parseZKP(x: any): ZKP | null {
-    const [h, r] = [parseNum(x.h), parseNum(x.r)];
-    if(h && r){
-        return {h, r};
-    }
+    try{
+        const [h, r] = [parseNum(x.h), parseNum(x.r)];
+        if(h && r){
+            return {h, r};
+        }
+    } catch {}
     return null;
+}
+
+export class DeserializationError extends Error {
+    constructor(message: string) {
+      super(message);
+      this.name = "DeserializationError";
+    }
 }
 
 export class RegistrationRequest {
@@ -30,7 +39,7 @@ export class RegistrationRequest {
     constructor(username: string, t: BigNumber, pi: BigNumber, T: BigNumber){
         [this.username, this.t, this.pi, this.T] = [username, t, pi, T];
     }
-    static deserialize(x: any): RegistrationRequest {
+    static deserialize(x: any): RegistrationRequest | DeserializationError {
         if(typeof x == "string"){
             x = JSON.parse(x);
         }
@@ -43,7 +52,7 @@ export class RegistrationRequest {
         if(username !== null && t !== null && pi !== null && T !== null){
             return new this(username, t, pi, T);
         }
-        throw new Error("Could not deserialize RegistrationRequest - invalid data");
+        return new DeserializationError("Failed to deserialize RegistrationRequest: invalid data");
     }
     serialize(){
         return {
@@ -63,7 +72,7 @@ export class UserCredentials {
     constructor(X3: BigNumber, PI3: ZKP, pi: BigNumber, T: BigNumber){
         [this.X3, this.PI3, this.pi, this.T] = [X3, PI3, pi, T];
     }
-    static deserialize(x: any): UserCredentials {
+    static deserialize(x: any): UserCredentials | DeserializationError {
         if(typeof x == "string"){
             x = JSON.parse(x);
         }
@@ -76,7 +85,7 @@ export class UserCredentials {
         if(X3 !== null && PI3 !== null && pi !== null && T !== null){
             return new this(X3, PI3, pi, T);
         }
-        throw new Error("Could not deserialize UserCredentials - invalid data");
+        return new DeserializationError("Failed to deserialize UserCredentials: invalid data");
     }
     serialize(){
         return {
@@ -96,7 +105,7 @@ export class AuthInitRequest {
     constructor(X1: BigNumber, X2: BigNumber, PI1: ZKP, PI2: ZKP){
         [this.X1, this.X2, this.PI1, this.PI2] = [X1, X2, PI1, PI2];
     }
-    static deserialize(x: any): AuthInitRequest {
+    static deserialize(x: any): AuthInitRequest | DeserializationError {
         if(typeof x == "string"){
             x = JSON.parse(x);
         }
@@ -109,7 +118,7 @@ export class AuthInitRequest {
         if(X1 !== null && X2 !== null && PI1 !== null && PI2 !== null){
             return new this(X1, X2, PI1, PI2);
         }
-        throw new Error("Could not deserialize AuthInitRequest - invalid data");
+        return new DeserializationError("Failed to deserialize AuthInitRequest: invalid data");
     }
     serialize(){
         return {
@@ -117,6 +126,63 @@ export class AuthInitRequest {
             X2: this.X2.toString(16),
             PI1: {h: this.PI1.h.toString(16), r: this.PI1.r.toString(16)},
             PI2: {h: this.PI2.h.toString(16), r: this.PI2.r.toString(16)}
+        };
+    }
+}
+
+export class AuthInitialValues {
+    T: BigNumber;
+    pi: BigNumber;
+    x4: BigNumber;
+    X1: BigNumber;
+    X2: BigNumber;
+    X3: BigNumber;
+    X4: BigNumber;
+    beta: BigNumber;
+    PI1: ZKP;
+    PI2: ZKP;
+    PI3: ZKP;
+    PIBeta: ZKP;
+    constructor(T: BigNumber, pi: BigNumber, x4: BigNumber, X1: BigNumber, X2: BigNumber, X3: BigNumber, X4: BigNumber, beta: BigNumber, PI1: ZKP, PI2: ZKP, PI3: ZKP, PIBeta: ZKP){
+        [this.T, this.pi, this.x4, this.X1, this.X2, this.X3, this.X4, this.beta, this.PI1, this.PI2, this.PI3, this.PIBeta] = [T, pi, x4, X1, X2, X3, X4, beta, PI1, PI2, PI3, PIBeta];
+    }
+    static deserialize(x: any): AuthInitialValues | DeserializationError {
+        if(typeof x == "string"){
+            x = JSON.parse(x);
+        }
+        const [T, pi, x4, X1, X2, X3, X4, beta, PI1, PI2, PI3, PIBeta] = [
+            parseNum(x.T),
+            parseNum(x.pi),
+            parseNum(x.x4),
+            parseNum(x.X1),
+            parseNum(x.X2),
+            parseNum(x.X3),
+            parseNum(x.X4),
+            parseNum(x.beta),
+            parseZKP(x.PI1),
+            parseZKP(x.PI2),
+            parseZKP(x.PI3),
+            parseZKP(x.PIBeta)
+        ];
+        if(T !== null && pi !== null && x4 !== null && X1 !== null && X2 !== null && X3 !== null && X4 !== null && beta !== null && PI1 !== null && PI2 !== null && PI3 !== null && PIBeta !== null){
+            return new this(T, pi, x4, X1, X2, X3, X4, beta, PI1, PI2, PI3, PIBeta);
+        }
+        return new DeserializationError("Failed to deserialize AuthInitialValues: invalid data");
+    }
+    serialize(){
+        return {
+            T: this.T.toString(16),
+            pi: this.pi.toString(16),
+            x4: this.x4.toString(16),
+            X1: this.X1.toString(16),
+            X2: this.X2.toString(16),
+            X3: this.X3.toString(16),
+            X4: this.X4.toString(16),
+            beta: this.beta.toString(16),
+            PI1: {h: this.PI1.h.toString(16), r: this.PI1.r.toString(16)},
+            PI2: {h: this.PI2.h.toString(16), r: this.PI2.r.toString(16)},
+            PI3: {h: this.PI3.h.toString(16), r: this.PI3.r.toString(16)},
+            PIBeta: {h: this.PIBeta.h.toString(16), r: this.PIBeta.r.toString(16)}
         };
     }
 }
@@ -131,7 +197,7 @@ export class AuthInitResponse {
     constructor(X3: BigNumber, X4: BigNumber, PI3: ZKP, PI4: ZKP, beta: BigNumber, PIBeta: ZKP){
         [this.X3, this.X4, this.PI3, this.PI4, this.beta, this.PIBeta] = [X3, X4, PI3, PI4, beta, PIBeta];
     }
-    static deserialize(x: any): AuthInitResponse {
+    static deserialize(x: any): AuthInitResponse | DeserializationError {
         if(typeof x == "string"){
             x = JSON.parse(x);
         }
@@ -146,7 +212,7 @@ export class AuthInitResponse {
         if(X3 !== null && X4 !== null && PI3 !== null && PI4 !== null && beta !== null && PIBeta !== null){
             return new this(X3, X4, PI3, PI4, beta, PIBeta);
         }
-        throw new Error("Could not deserialize AuthInitResponse - invalid data");
+        return new DeserializationError("Failed to deserialize AuthInitResponse: invalid data");
     }
     serialize(){
         return {
@@ -167,7 +233,7 @@ export class AuthFinishRequest {
     constructor(alpha: BigNumber, PIAlpha: ZKP, r: BigNumber){
         [this.alpha, this.PIAlpha, this.r] = [alpha, PIAlpha, r];
     }
-    static deserialize(x: any): AuthFinishRequest {
+    static deserialize(x: any): AuthFinishRequest | DeserializationError {
         if(typeof x == "string"){
             x = JSON.parse(x);
         }
@@ -179,7 +245,7 @@ export class AuthFinishRequest {
         if(alpha !== null && PIAlpha !== null && r !== null){
             return new this(alpha, PIAlpha, r);
         }
-        throw new Error("Could not deserialize AuthFinishRequest - invalid data");
+        return new DeserializationError("Failed to deserialize AuthFinishRequest: invalid data");
     }
     serialize(){
         return {

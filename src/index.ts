@@ -4,6 +4,8 @@ export {
     RegistrationRequest,
     UserCredentials,
     AuthInitRequest,
+    AuthInitialValues,
     AuthInitResponse,
-    AuthFinishRequest
+    AuthFinishRequest,
+    DeserializationError
 } from "./messages.js"

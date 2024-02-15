@@ -46,7 +46,10 @@ export class OwlClient extends OwlCommon {
         this.initValues = {username, t, pi, x1, x2, X1, X2, PI1, PI2};
         return new AuthInitRequest(X1, X2, PI1, PI2);
     }
-    async authFinish(request: AuthInitResponse): Promise<[BigNumber, AuthFinishRequest]> {
+    async authFinish(request: AuthInitResponse): Promise<{
+            key: BigNumber,
+            finishRequest: AuthFinishRequest
+        } | Error> {
         const {username, t, pi, x1, x2, X1, X2, PI1, PI2} = this.initValues;
         const {X3, X4, PI3, PI4, beta, PIBeta} = request;
         // verify ZKPs and check X4 is valid
@@ -55,8 +58,7 @@ export class OwlClient extends OwlCommon {
              await this.verifyZKP(PIBeta, X1.times(X2).times(X3), beta, this.config.serverId) &&
              !X4.mod(this.config.p).eq(1)
         )){
-            // this should be an error
-            throw new ZKPVerificationFailure();
+            return new ZKPVerificationFailure();
         }
         const alpha_g = X1.times(X3).times(X4);
         // alpha = X1X3X4^(x2 * pi) % p
@@ -68,7 +70,7 @@ export class OwlClient extends OwlCommon {
         // K = (((beta % p) * ((X4^-x2*pi) % p)) % p)^x2 % p
         const X4x2pi = this.modExp(X4, x2.negated().times(pi), this.config.p);
         if(X4x2pi instanceof Error){
-            throw X4x2pi;
+            return X4x2pi;
         }
         const K = beta.mod(this.config.p)
                   .times(X4x2pi)
@@ -81,6 +83,6 @@ export class OwlClient extends OwlCommon {
         const r = x1.minus(t.times(h)).mod(this.config.q);
         // k = H(K) (mutually derived key)
         const k = await this.H(K.toString());
-        return [k, new AuthFinishRequest(alpha, PIalpha, r)]
+        return {key: k, finishRequest: new AuthFinishRequest(alpha, PIalpha, r)};
     }
 }

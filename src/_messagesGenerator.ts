@@ -25,6 +25,20 @@ const messageSpecs: MessageMap = {
         PI1: "ZKP",
         PI2: "ZKP"
     },
+    AuthInitialValues: {
+        T: "BigNumber",
+        pi: "BigNumber",
+        x4: "BigNumber", 
+        X1: "BigNumber",
+        X2: "BigNumber",
+        X3: "BigNumber",
+        X4: "BigNumber",
+        beta: "BigNumber",
+        PI1: "ZKP",
+        PI2: "ZKP",
+        PI3: "ZKP",
+        PIBeta: "ZKP"
+    },
     AuthInitResponse: {
         X3: "BigNumber",
         X4: "BigNumber",
@@ -66,11 +80,20 @@ function parseNum(x: any): BigNumber | null {
 }
 
 function parseZKP(x: any): ZKP | null {
-    const [h, r] = [parseNum(x.h), parseNum(x.r)];
-    if(h && r){
-        return {h, r};
-    }
+    try{
+        const [h, r] = [parseNum(x.h), parseNum(x.r)];
+        if(h && r){
+            return {h, r};
+        }
+    } catch {}
     return null;
+}
+
+export class DeserializationError extends Error {
+    constructor(message: string) {
+      super(message);
+      this.name = "DeserializationError";
+    }
 }
 
 `
@@ -102,8 +125,8 @@ for(const [cls, attrs] of Object.entries(messageSpecs)){
     template += Object.keys(attrs).join(", ");
     template += "];\n";
     template += indent("}\n", 1);
-    // static deserialize(x: string): ClassName {
-    template += indent(`static deserialize(x: any): ${cls} {\n`, 1);
+    // static deserialize(x: string): ClassName | DeserializationError {
+    template += indent(`static deserialize(x: any): ${cls} | DeserializationError {\n`, 1);
     template += indent("if(typeof x == \"string\"){\n", 2);
     template += indent("x = JSON.parse(x);\n", 3);
     template += indent("}\n", 2);
@@ -137,7 +160,7 @@ for(const [cls, attrs] of Object.entries(messageSpecs)){
     template += ");\n";
     template += indent("}\n", 2);
     template += indent(
-        `throw new Error(\"Could not deserialize ${cls} - invalid data\");\n`
+        `return new DeserializationError(\"Failed to deserialize ${cls}: invalid data\");\n`
     , 2);
     template += indent("}\n", 1);
     // serialize() {
