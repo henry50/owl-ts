@@ -1,30 +1,11 @@
-import BigNumber from "bignumber.js";
-import { OwlCommon, ZKP, ZKPVerificationFailure } from "./owl_common.js"
-import { AuthFinishRequest, AuthInitRequest, AuthInitResponse, AuthInitialValues, RegistrationRequest, UserCredentials } from "./messages.js";
-
-interface ServerInitVals{
-    username: string;
-    T: BigNumber;
-    pi: BigNumber;
-    x4: BigNumber;
-    X1: BigNumber;
-    X2: BigNumber;
-    X3: BigNumber;
-    X4: BigNumber;
-    beta: BigNumber;
-    PI1: ZKP;
-    PI2: ZKP;
-    PI3: ZKP;
-    PIBeta: ZKP;
-    
-}
+import { OwlCommon, ZKPVerificationFailure } from "./owl_common.js"
+import { AuthFinishRequest, AuthInitRequest, AuthInitResponse, AuthInitialValues, RegistrationRequest, UserCredentials } from "./messages.js"
 
 export class OwlServer extends OwlCommon {
-    initValues!: ServerInitVals;
     async register(request: RegistrationRequest){
-        const x3 = this.rand(BigNumber(1), this.config.q.minus(1));
-        const X3 = this.config.g.pow(x3, this.config.p);
-        const PI3 = await this.createZKP(x3, this.config.g, X3, this.config.serverId);
+        const x3 = this.rand(1n, this.n - 1n);
+        const X3 = this.G.multiply(x3);
+        const PI3 = await this.createZKP(x3, this.G, X3, this.serverId);
         return new UserCredentials(X3, PI3, request.pi, request.T);
     }
     async authInit(username: string, request: AuthInitRequest, credentials: UserCredentials): Promise<{
@@ -34,51 +15,48 @@ export class OwlServer extends OwlCommon {
         const {X1, X2, PI1, PI2} = request;
         const {X3, PI3, pi, T} = credentials;
         if(!(
-            await this.verifyZKP(PI1, this.config.g, X1, username) &&
-            await this.verifyZKP(PI2, this.config.g, X2, username)
+            await this.verifyZKP(PI1, this.G, X1, username) &&
+            await this.verifyZKP(PI2, this.G, X2, username)
         )){
             return new ZKPVerificationFailure();
         }
-        if(X2.mod(this.config.p).eq(1)){
-            return new Error("Invalid value given for X2");
-        }
-        const x4 = this.rand(BigNumber(1), this.config.q.minus(1));
-        const X4 = this.config.g.pow(x4, this.config.p);
-        const PI4 = await this.createZKP(x4, this.config.g, X4, this.config.serverId);
-        const secret = pi.times(x4);
-        const betaGen = X1.times(X2).times(X3);
-        const beta = betaGen.pow(secret, this.config.p);
-        const PIBeta = await this.createZKP(secret, betaGen, beta, this.config.serverId);
-        // keep values for authFinish (this should probably be changed to store in database)
+        // ??
+        // if(X2.mod(this.config.p).eq(1)){
+        //     return new Error("Invalid value given for X2");
+        // }
+        // x4 = [1, n-1]
+        const x4 = this.rand(1n, this.n - 1n);
+        // X4 = G * x4
+        const X4 = this.G.multiply(x4);
+        // PI4 = ZKP{x4}
+        const PI4 = await this.createZKP(x4, this.G, X4, this.serverId);
+        const secret = pi + x4;
+        const beta_G = X1.add(X2).add(X3);
+        // beta = (X1+X2+X3) * (pi+x4)
+        const beta = beta_G.multiply(secret);
+        // PIBeta = ZKP{pi + x4}
+        const PIBeta = await this.createZKP(secret, beta_G, beta, this.serverId);
+        // package values
         const response = new AuthInitResponse(X3, X4, PI3, PI4, beta, PIBeta);
         const initial = new AuthInitialValues(T, pi, x4, X1, X2, X3, X4, beta, PI1, PI2, PI3, PIBeta);
         return {response, initial};
     }
-    async authFinish(username: string, request: AuthFinishRequest, initial: AuthInitialValues): Promise<BigNumber | false | ZKPVerificationFailure>{
+    async authFinish(username: string, request: AuthFinishRequest, initial: AuthInitialValues): Promise<bigint | false | ZKPVerificationFailure>{
         const { T, pi, x4, X1, X2, X3, X4, beta, PI1, PI2, PI3, PIBeta } = initial;
         const {alpha, PIAlpha, r} = request;
-        if(!await this.verifyZKP(PIAlpha, X1.times(X3).times(X4), alpha, username)){
+        if(!await this.verifyZKP(PIAlpha, X1.add(X3).add(X4), alpha, username)){
             return new ZKPVerificationFailure();
         }
-        // X2^(-x4*pi)
-        const X2X4pi = this.modExp(X2, x4.times(pi).negated(), this.config.p);
-        if(X2X4pi instanceof Error){
+        // K = (alpha - (X2 * (x4 + pi)) * x4 ?? % p
+        const K = (alpha.subtract(X2.multiply(x4 + pi))).multiply(x4);
+        // h = H(K||Transcript) ?? % p
+        const h = (await this.H(this.concat(K, username, X1, X2, PI1.V, PI1.r, PI2.V, PI2.r, this.serverId, X3, X4, PI3.V, PI3.r, beta, PIBeta.V, PIBeta.r, alpha, PIAlpha.V, PIAlpha.r)))
+            // .mod(this.config.p);
+        // G * r ?= T * h
+        if(!this.G.multiply(r).equals(T.multiply(h))){
             return false;
         }
-        // K = ((alpha % p) * (X2^(-x4*pi) % p)^x4 % p
-        const K = alpha.mod(this.config.p).times(X2X4pi).mod(this.config.p).pow(x4, this.config.p);
-        // h = H(K||Transcript) % p
-        const h = (await this.H(this.concat(K, username, X1, X2, PI1.h, PI1.r, PI2.h, PI2.r, this.config.serverId, X3, X4, PI3.h, PI3.r, beta, PIBeta.h, PIBeta.r, alpha, PIAlpha.h, PIAlpha.r)))
-            .mod(this.config.p);
-        // g^r % p ?= T^h % p
-        const grp = this.modExp(this.config.g, r, this.config.p);
-        if(grp instanceof Error){
-            return false;
-        }
-        const k = await this.H(K.toString());
-        if(!grp.times(T.pow(h, this.config.p)).mod(this.config.p).eq(X1)){
-            return false;
-        }
+        const k = await this.H(K.toRawBytes());
         return k;        
     }
 }
