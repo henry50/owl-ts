@@ -75,11 +75,11 @@ export abstract class OwlCommon {
         const bytes = concatBytes(...args.map(arg => {
             if(arg instanceof Uint8Array){
                 return arg;
-            } else if(typeof arg == "bigint"){
-                return numberToVarBytesBE(arg)
             } else if(typeof arg == "string"){
                 return new TextEncoder().encode(arg)
-            } else if(arg.toRawBytes){
+            } else if(typeof arg == "bigint"){
+                return numberToVarBytesBE(arg)
+            } else if(arg.toRawBytes){ // Point
                 return arg.toRawBytes();
             }  else{
                 throw new Error("Unsupported type in concat");
