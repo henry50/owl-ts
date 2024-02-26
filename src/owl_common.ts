@@ -66,35 +66,26 @@ export abstract class OwlCommon {
         return from + randVal % (range + 1n);
     }
     /**
-     * Concatenate the given numbers and strings into one string
-     * @param args Any number of BigNumber or string objects
-     * @returns Concatenated objects
+     * Hash any number of Uint8Array, string, bigint or Point to a bigint
+     * @param args Items to hash
+     * @returns Hash output as bigint
      */
-    concat(...args: Array<bigint | string | Point>): Uint8Array {
-        return concatBytes(...args.map(arg => {
-            if(typeof arg == "bigint"){
+    async H(...args: Array<Uint8Array | string | bigint | Point>): Promise<bigint> {
+        // convert each acceptable input type to Uint8Array and concatenate
+        const bytes = concatBytes(...args.map(arg => {
+            if(arg instanceof Uint8Array){
+                return arg;
+            } else if(typeof arg == "bigint"){
                 return numberToVarBytesBE(arg)
             } else if(typeof arg == "string"){
                 return new TextEncoder().encode(arg)
             } else if(arg.toRawBytes){
                 return arg.toRawBytes();
-            } else{
+            }  else{
                 throw new Error("Unsupported type in concat");
             }
         }));
-    }
-    /**
-     * Hash a Uint8Array, string or bigint to a bigint
-     * @param x Value to be hashed
-     * @returns Hash output as bigint
-     */
-    async H(x: Uint8Array | string | bigint): Promise<bigint> {
-        if(typeof x == "string"){
-            x = new TextEncoder().encode(x);
-        } else if(typeof x == "bigint"){
-            x = numberToVarBytesBE(x);
-        }
-        const hashBuffer = await crypto.subtle.digest("SHA-256", x); // hash the message
+        const hashBuffer = await crypto.subtle.digest("SHA-256", bytes);
         return bytesToNumberBE(new Uint8Array(hashBuffer));
     }
     /**
@@ -110,7 +101,7 @@ export abstract class OwlCommon {
     async createZKP(x: bigint, G: Point, X: Point, prover: string): Promise<ZKP> {
         const v = this.rand(1n, this.n - 1n);
         const V = G.multiply(v);
-        const h = await this.H(this.concat(G, V, X, prover));
+        const h = await this.H(G, V, X, prover);
         const r = (v - (x * h)) % this.n;
         return {V, r};
     }
@@ -124,7 +115,7 @@ export abstract class OwlCommon {
      */
     async verifyZKP(zkp: ZKP, G: Point, X: Point, prover: string): Promise<boolean> {
         const {V, r} = zkp;
-        const h = await this.H(this.concat(G, V, X, prover));
+        const h = await this.H(G, V, X, prover);
         // check X is valid
         try{
             X.assertValidity();

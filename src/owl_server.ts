@@ -50,7 +50,7 @@ export class OwlServer extends OwlCommon {
         // K = (alpha - (X2 * (x4 + pi)) * x4 ?? % p
         const K = (alpha.subtract(X2.multiply(x4 + pi))).multiply(x4);
         // h = H(K||Transcript) ?? % p
-        const h = (await this.H(this.concat(K, username, X1, X2, PI1.V, PI1.r, PI2.V, PI2.r, this.serverId, X3, X4, PI3.V, PI3.r, beta, PIBeta.V, PIBeta.r, alpha, PIAlpha.V, PIAlpha.r)))
+        const h = await this.H(K, username, X1, X2, PI1.V, PI1.r, PI2.V, PI2.r, this.serverId, X3, X4, PI3.V, PI3.r, beta, PIBeta.V, PIBeta.r, alpha, PIAlpha.V, PIAlpha.r);
             // .mod(this.config.p);
         // G * r ?= T * h
         if(!this.G.multiply(r).equals(T.multiply(h))){
