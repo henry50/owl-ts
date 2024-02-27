@@ -18,6 +18,13 @@ export class ZKPVerificationFailure extends Error {
     }
 }
 
+export class AuthenticationFailure extends Error {
+    constructor() {
+        super("Authentication failed");
+        this.name = "AuthenticationFailure";
+    }
+}
+
 export enum Curves {
     P256 = 256,
     P384 = 384,
@@ -45,6 +52,16 @@ export abstract class OwlCommon {
             c.CURVE.n,
             new c.ProjectivePoint(c.CURVE.Gx, c.CURVE.Gy, 1n),
         ]
+    }
+    /**
+     * Add two numbers modulo the size of the curve
+     * Modulo formula from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Remainder
+     * @param args bigints to add
+     * @returns sum mod n
+     */
+    addModN(...args: bigint[]){
+        const sum = args.reduce((x, y) => x + y);
+        return ((sum % this.n) + this.n) % this.n;
     }
     /**
      * Generate a cryptographically secure random number 
@@ -102,7 +119,8 @@ export abstract class OwlCommon {
         const v = this.rand(1n, this.n - 1n);
         const V = G.multiply(v);
         const h = await this.H(G, V, X, prover);
-        const r = (v - (x * h)) % this.n;
+        // ?? mod n
+        const r = this.addModN(v, -(x * h));
         return {V, r};
     }
     /**
@@ -120,7 +138,7 @@ export abstract class OwlCommon {
         try{
             X.assertValidity();
         } catch { return false; }
-        // check V = G*r + X*h
-        return V.equals(G.multiply(r).add(X.multiply(h % this.n)));
+        // check V = G*r + X*h ?? mod n??
+        return V.equals(G.multiply(r).add(X.multiply(this.addModN(h))));
     }
 }

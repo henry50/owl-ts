@@ -59,18 +59,19 @@ export class OwlClient extends OwlCommon {
         )){
             return new ZKPVerificationFailure();
         }
+        const secret = this.addModN(x2, pi);
         const alpha_G = X1.add(X3).add(X4);
         // alpha = (X1+X3+X4)*(x2 + pi)
-        const alpha = alpha_G.multiply(x2 + pi);
-        // PIalpha = ZKP{x2 * pi}
-        const PIalpha = await this.createZKP(x2 * pi, alpha_G, alpha, username);
+        const alpha = alpha_G.multiply(secret);
+        // PIalpha = ZKP{x2 + pi}
+        const PIalpha = await this.createZKP(secret, alpha_G, alpha, username);
         // K = (beta-(X4*(x2 + pi)))*x2 ?? % p
-        const K = beta.subtract(X4.multiply(x2 + pi)).multiply(x2);              
+        const K = beta.subtract(X4.multiply(secret)).multiply(x2);              
         // h = H(K||Transcript) ?? % p
         const h = await this.H(K, username, X1, X2, PI1.V, PI1.r, PI2.V, PI2.r, this.serverId,
             X3, X4, PI3.V, PI3.r, beta, PIBeta.V, PIBeta.r, alpha, PIalpha.V, PIalpha.r);
-        // r = (x1 - t * h) ?? % q
-        const r = (x1 - t * h); //% this.n
+        // r = (x1 - (t * h)) ?? % q
+        const r = this.addModN(x1, -(t * h)); //% this.n
         // k = H(K) (mutually derived key)
         const k = await this.H(K.toRawBytes());
         return {key: k, finishRequest: new AuthFinishRequest(alpha, PIalpha, r)};
