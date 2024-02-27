@@ -14,10 +14,11 @@ import {
 
 export class OwlServer extends OwlCommon {
     async register(request: RegistrationRequest) {
+        const { pi, T } = request;
         const x3 = this.rand(1n, this.n - 1n);
         const X3 = this.G.multiply(x3);
         const PI3 = await this.createZKP(x3, this.G, X3, this.serverId);
-        return new UserCredentials(X3, PI3, request.pi, request.T);
+        return new UserCredentials(X3, PI3, pi, T);
     }
     async authInit(
         username: string,
@@ -50,7 +51,8 @@ export class OwlServer extends OwlCommon {
         const X4 = this.G.multiply(x4);
         // PI4 = ZKP{x4}
         const PI4 = await this.createZKP(x4, this.G, X4, this.serverId);
-        const secret = this.addModN(x4, pi);
+        // ???? why mod n
+        const secret = this.modN(x4 + pi);
         const beta_G = X1.add(X2).add(X3);
         // beta = (X1+X2+X3) * (pi+x4)
         const beta = beta_G.multiply(secret);
@@ -97,33 +99,31 @@ export class OwlServer extends OwlCommon {
         ) {
             return new ZKPVerificationFailure();
         }
-        // K = (alpha - (X2 * (x4 + pi)) * x4 ?? % p
-        const K = alpha
-            .subtract(X2.multiply(this.addModN(x4, pi)))
-            .multiply(x4);
-        // h = H(K||Transcript) ?? % p
+        // ???? why mod n
+        // K = (alpha - (X2 * (x4 + pi))) * x4
+        const K = alpha.subtract(X2.multiply(this.modN(x4 + pi))).multiply(x4);
+        // h = H(K||Transcript)
         const h = await this.H(
             K,
             username,
             X1,
             X2,
-            PI1.V,
+            PI1.h,
             PI1.r,
-            PI2.V,
+            PI2.h,
             PI2.r,
             this.serverId,
             X3,
             X4,
-            PI3.V,
+            PI3.h,
             PI3.r,
             beta,
-            PIBeta.V,
+            PIBeta.h,
             PIBeta.r,
             alpha,
-            PIAlpha.V,
+            PIAlpha.h,
             PIAlpha.r,
         );
-        // .mod(this.config.p);
         // (G * r) + (T * h) ?= X1
         if (!this.G.multiply(r).add(T.multiply(h)).equals(X1)) {
             return new AuthenticationFailure();

@@ -11,7 +11,7 @@ import {
 export type Point = ProjPointType<bigint>;
 
 export interface ZKP {
-    V: Point;
+    h: bigint;
     r: bigint;
 }
 
@@ -58,14 +58,12 @@ export abstract class OwlCommon {
         ];
     }
     /**
-     * Add two numbers modulo the size of the curve
      * Modulo formula from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Remainder
-     * @param args bigints to add
-     * @returns sum mod n
+     * @param x Dividend
+     * @returns x mod n
      */
-    addModN(...args: bigint[]) {
-        const sum = args.reduce((x, y) => x + y);
-        return ((sum % this.n) + this.n) % this.n;
+    modN(x: bigint) {
+        return ((x % this.n) + this.n) % this.n;
     }
     /**
      * Generate a cryptographically secure random number
@@ -133,9 +131,9 @@ export abstract class OwlCommon {
         const v = this.rand(1n, this.n - 1n);
         const V = G.multiply(v);
         const h = await this.H(G, V, X, prover);
-        // ?? mod n
-        const r = this.addModN(v, -(x * h));
-        return { V, r };
+        // r = v - (x * h) mod n
+        const r = this.modN(v - x * h);
+        return { h, r };
     }
     /**
      * Verify the given ZKP for the given generator, public key
@@ -151,15 +149,16 @@ export abstract class OwlCommon {
         X: Point,
         prover: string,
     ): Promise<boolean> {
-        const { V, r } = zkp;
-        const h = await this.H(G, V, X, prover);
+        const { h, r } = zkp;
         // check X is valid
         try {
             X.assertValidity();
         } catch {
             return false;
         }
-        // check V = G*r + X*h ?? mod n??
-        return V.equals(G.multiply(r).add(X.multiply(this.addModN(h))));
+        // V = G*r + X*h
+        const V = G.multiply(r).add(X.multiply(h));
+        // check h = H(G, V, X, prover)
+        return h == (await this.H(G, V, X, prover));
     }
 }

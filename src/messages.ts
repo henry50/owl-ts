@@ -34,9 +34,9 @@ function parsePoint(x: any, curve: Curves): Point | null {
 
 function parseZKP(x: any, curve: Curves): ZKP | null {
     try {
-        const [V, r] = [parsePoint(x.V, curve), parseNum(x.r)];
-        if (V && r) {
-            return { V, r };
+        const [h, r] = [parseNum(x.h), parseNum(x.r)];
+        if (h && r) {
+            return { h, r };
         }
     } catch {}
     return null;
@@ -50,12 +50,10 @@ export class DeserializationError extends Error {
 }
 
 export class RegistrationRequest {
-    username: string;
-    t: bigint;
     pi: bigint;
     T: Point;
-    constructor(username: string, t: bigint, pi: bigint, T: Point) {
-        [this.username, this.t, this.pi, this.T] = [username, t, pi, T];
+    constructor(pi: bigint, T: Point) {
+        [this.pi, this.T] = [pi, T];
     }
     static deserialize(
         x: any,
@@ -64,14 +62,9 @@ export class RegistrationRequest {
         if (typeof x == "string") {
             x = JSON.parse(x);
         }
-        const [username, t, pi, T] = [
-            x.username,
-            parseNum(x.t),
-            parseNum(x.pi),
-            parsePoint(x.T, cfg.curve),
-        ];
-        if (username !== null && t !== null && pi !== null && T !== null) {
-            return new this(username, t, pi, T);
+        const [pi, T] = [parseNum(x.pi), parsePoint(x.T, cfg.curve)];
+        if (pi !== null && T !== null) {
+            return new this(pi, T);
         }
         return new DeserializationError(
             "Failed to deserialize RegistrationRequest: invalid data",
@@ -79,8 +72,6 @@ export class RegistrationRequest {
     }
     serialize() {
         return {
-            username: this.username,
-            t: this.t.toString(16),
             pi: this.pi.toString(16),
             T: this.T.toHex(),
         };
@@ -118,7 +109,7 @@ export class UserCredentials {
     serialize() {
         return {
             X3: this.X3.toHex(),
-            PI3: { V: this.PI3.V.toHex(), r: this.PI3.r.toString(16) },
+            PI3: { h: this.PI3.h.toString(16), r: this.PI3.r.toString(16) },
             pi: this.pi.toString(16),
             T: this.T.toHex(),
         };
@@ -157,8 +148,8 @@ export class AuthInitRequest {
         return {
             X1: this.X1.toHex(),
             X2: this.X2.toHex(),
-            PI1: { V: this.PI1.V.toHex(), r: this.PI1.r.toString(16) },
-            PI2: { V: this.PI2.V.toHex(), r: this.PI2.r.toString(16) },
+            PI1: { h: this.PI1.h.toString(16), r: this.PI1.r.toString(16) },
+            PI2: { h: this.PI2.h.toString(16), r: this.PI2.r.toString(16) },
         };
     }
 }
@@ -269,10 +260,13 @@ export class AuthInitialValues {
             X3: this.X3.toHex(),
             X4: this.X4.toHex(),
             beta: this.beta.toHex(),
-            PI1: { V: this.PI1.V.toHex(), r: this.PI1.r.toString(16) },
-            PI2: { V: this.PI2.V.toHex(), r: this.PI2.r.toString(16) },
-            PI3: { V: this.PI3.V.toHex(), r: this.PI3.r.toString(16) },
-            PIBeta: { V: this.PIBeta.V.toHex(), r: this.PIBeta.r.toString(16) },
+            PI1: { h: this.PI1.h.toString(16), r: this.PI1.r.toString(16) },
+            PI2: { h: this.PI2.h.toString(16), r: this.PI2.r.toString(16) },
+            PI3: { h: this.PI3.h.toString(16), r: this.PI3.r.toString(16) },
+            PIBeta: {
+                h: this.PIBeta.h.toString(16),
+                r: this.PIBeta.r.toString(16),
+            },
         };
     }
 }
@@ -334,10 +328,13 @@ export class AuthInitResponse {
         return {
             X3: this.X3.toHex(),
             X4: this.X4.toHex(),
-            PI3: { V: this.PI3.V.toHex(), r: this.PI3.r.toString(16) },
-            PI4: { V: this.PI4.V.toHex(), r: this.PI4.r.toString(16) },
+            PI3: { h: this.PI3.h.toString(16), r: this.PI3.r.toString(16) },
+            PI4: { h: this.PI4.h.toString(16), r: this.PI4.r.toString(16) },
             beta: this.beta.toHex(),
-            PIBeta: { V: this.PIBeta.V.toHex(), r: this.PIBeta.r.toString(16) },
+            PIBeta: {
+                h: this.PIBeta.h.toString(16),
+                r: this.PIBeta.r.toString(16),
+            },
         };
     }
 }
@@ -372,7 +369,7 @@ export class AuthFinishRequest {
         return {
             alpha: this.alpha.toHex(),
             PIAlpha: {
-                V: this.PIAlpha.V.toHex(),
+                h: this.PIAlpha.h.toString(16),
                 r: this.PIAlpha.r.toString(16),
             },
             r: this.r.toString(16),

@@ -8,8 +8,6 @@ npx tsx ./src/_messagesGenerator.ts
 // add/edit messages here:
 const messageSpecs: MessageMap = {
     RegistrationRequest: {
-        username: "string",
-        t: "bigint",
         pi: "bigint",
         T: "Point",
     },
@@ -99,9 +97,9 @@ function parsePoint(x: any, curve: Curves): Point | null {
 
 function parseZKP(x: any, curve: Curves): ZKP | null {
     try {
-        const [V, r] = [parsePoint(x.V, curve), parseNum(x.r)];
-        if (V && r) {
-            return { V, r };
+        const [h, r] = [parseNum(x.h), parseNum(x.r)];
+        if (h && r) {
+            return { h, r };
         }
     } catch {}
     return null;
@@ -203,7 +201,7 @@ for (const [cls, attrs] of Object.entries(messageSpecs)) {
                 case "Point":
                     return `${attr}: this.${attr}.toHex()`;
                 case "ZKP":
-                    return `${attr}: { V: this.${attr}.V.toHex(), r: this.${attr}.r.toString(16) }`;
+                    return `${attr}: { h: this.${attr}.h.toString(16), r: this.${attr}.r.toString(16) }`;
                 default:
                     return `${attr}: this.${attr}`;
             }
