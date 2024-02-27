@@ -1,0 +1,4 @@
+lib
+node_modules
+testing
+**/*.json

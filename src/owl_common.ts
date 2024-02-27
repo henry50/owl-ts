@@ -2,9 +2,13 @@ import { p256 } from "@noble/curves/p256";
 import { p384 } from "@noble/curves/p384";
 import { p521 } from "@noble/curves/p521";
 import { ProjPointType } from "@noble/curves/abstract/weierstrass";
-import { bytesToNumberBE, concatBytes, numberToVarBytesBE } from "@noble/curves/abstract/utils";
+import {
+    bytesToNumberBE,
+    concatBytes,
+    numberToVarBytesBE,
+} from "@noble/curves/abstract/utils";
 
-export type Point = ProjPointType<bigint>
+export type Point = ProjPointType<bigint>;
 
 export interface ZKP {
     V: Point;
@@ -13,8 +17,8 @@ export interface ZKP {
 
 export class ZKPVerificationFailure extends Error {
     constructor() {
-      super("ZKP verification failed");
-      this.name = "ZKPVerificationFailure";
+        super("ZKP verification failed");
+        this.name = "ZKPVerificationFailure";
     }
 }
 
@@ -28,13 +32,13 @@ export class AuthenticationFailure extends Error {
 export enum Curves {
     P256 = 256,
     P384 = 384,
-    P521 = 521
+    P521 = 521,
 }
 
 export interface Config {
     curve: Curves;
     serverId: string;
-} 
+}
 
 export abstract class OwlCommon {
     serverId: string;
@@ -45,13 +49,13 @@ export abstract class OwlCommon {
         const c = {
             [Curves.P256]: p256,
             [Curves.P384]: p384,
-            [Curves.P521]: p521
+            [Curves.P521]: p521,
         }[curve];
         [this.serverId, this.n, this.G] = [
             serverId,
             c.CURVE.n,
             new c.ProjectivePoint(c.CURVE.Gx, c.CURVE.Gy, 1n),
-        ]
+        ];
     }
     /**
      * Add two numbers modulo the size of the curve
@@ -59,12 +63,12 @@ export abstract class OwlCommon {
      * @param args bigints to add
      * @returns sum mod n
      */
-    addModN(...args: bigint[]){
+    addModN(...args: bigint[]) {
         const sum = args.reduce((x, y) => x + y);
         return ((sum % this.n) + this.n) % this.n;
     }
     /**
-     * Generate a cryptographically secure random number 
+     * Generate a cryptographically secure random number
      * between from and to inclusive
      * @param from Lower limit
      * @param to Upper limit
@@ -80,28 +84,33 @@ export abstract class OwlCommon {
         const randVal = bytesToNumberBE(randBytes);
         // modulo randVal to get value in range [0, range]
         // then add from to get value in range [from, to]
-        return from + randVal % (range + 1n);
+        return from + (randVal % (range + 1n));
     }
     /**
      * Hash any number of Uint8Array, string, bigint or Point to a bigint
      * @param args Items to hash
      * @returns Hash output as bigint
      */
-    async H(...args: Array<Uint8Array | string | bigint | Point>): Promise<bigint> {
+    async H(
+        ...args: Array<Uint8Array | string | bigint | Point>
+    ): Promise<bigint> {
         // convert each acceptable input type to Uint8Array and concatenate
-        const bytes = concatBytes(...args.map(arg => {
-            if(arg instanceof Uint8Array){
-                return arg;
-            } else if(typeof arg == "string"){
-                return new TextEncoder().encode(arg)
-            } else if(typeof arg == "bigint"){
-                return numberToVarBytesBE(arg)
-            } else if(arg.toRawBytes){ // Point
-                return arg.toRawBytes();
-            }  else{
-                throw new Error("Unsupported type in concat");
-            }
-        }));
+        const bytes = concatBytes(
+            ...args.map((arg) => {
+                if (arg instanceof Uint8Array) {
+                    return arg;
+                } else if (typeof arg == "string") {
+                    return new TextEncoder().encode(arg);
+                } else if (typeof arg == "bigint") {
+                    return numberToVarBytesBE(arg);
+                } else if (arg.toRawBytes) {
+                    // Point
+                    return arg.toRawBytes();
+                } else {
+                    throw new Error("Unsupported type in concat");
+                }
+            }),
+        );
         const hashBuffer = await crypto.subtle.digest("SHA-256", bytes);
         return bytesToNumberBE(new Uint8Array(hashBuffer));
     }
@@ -115,13 +124,18 @@ export abstract class OwlCommon {
      * @param prover Prover identity
      * @returns Zero knowledge proof
      */
-    async createZKP(x: bigint, G: Point, X: Point, prover: string): Promise<ZKP> {
+    async createZKP(
+        x: bigint,
+        G: Point,
+        X: Point,
+        prover: string,
+    ): Promise<ZKP> {
         const v = this.rand(1n, this.n - 1n);
         const V = G.multiply(v);
         const h = await this.H(G, V, X, prover);
         // ?? mod n
         const r = this.addModN(v, -(x * h));
-        return {V, r};
+        return { V, r };
     }
     /**
      * Verify the given ZKP for the given generator, public key
@@ -131,13 +145,20 @@ export abstract class OwlCommon {
      * @param X Public key
      * @param prover Prover identity
      */
-    async verifyZKP(zkp: ZKP, G: Point, X: Point, prover: string): Promise<boolean> {
-        const {V, r} = zkp;
+    async verifyZKP(
+        zkp: ZKP,
+        G: Point,
+        X: Point,
+        prover: string,
+    ): Promise<boolean> {
+        const { V, r } = zkp;
         const h = await this.H(G, V, X, prover);
         // check X is valid
-        try{
+        try {
             X.assertValidity();
-        } catch { return false; }
+        } catch {
+            return false;
+        }
         // check V = G*r + X*h ?? mod n??
         return V.equals(G.multiply(r).add(X.multiply(this.addModN(h))));
     }

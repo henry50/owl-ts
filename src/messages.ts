@@ -6,18 +6,18 @@ import { p256 } from "@noble/curves/p256";
 import { p384 } from "@noble/curves/p384";
 import { p521 } from "@noble/curves/p521";
 
-function getCurve(curve: Curves){
+function getCurve(curve: Curves) {
     return {
         [Curves.P256]: p256,
         [Curves.P384]: p384,
-        [Curves.P521]: p521
+        [Curves.P521]: p521,
     }[curve];
 }
 
 function parseNum(x: any): bigint | null {
-    if(typeof x == "string"){
+    if (typeof x == "string") {
         // check for negative numbers
-        if(x.startsWith("-")){
+        if (x.startsWith("-")) {
             return -BigInt(`0x${x.substring(1)}`);
         }
         return BigInt(`0x${x}`);
@@ -26,17 +26,17 @@ function parseNum(x: any): bigint | null {
 }
 
 function parsePoint(x: any, curve: Curves): Point | null {
-    if(typeof x == "string"){
+    if (typeof x == "string") {
         return getCurve(curve).ProjectivePoint.fromHex(x);
     }
     return null;
 }
 
 function parseZKP(x: any, curve: Curves): ZKP | null {
-    try{
+    try {
         const [V, r] = [parsePoint(x.V, curve), parseNum(x.r)];
-        if(V && r){
-            return {V, r};
+        if (V && r) {
+            return { V, r };
         }
     } catch {}
     return null;
@@ -44,8 +44,8 @@ function parseZKP(x: any, curve: Curves): ZKP | null {
 
 export class DeserializationError extends Error {
     constructor(message: string) {
-      super(message);
-      this.name = "DeserializationError";
+        super(message);
+        this.name = "DeserializationError";
     }
 }
 
@@ -54,30 +54,35 @@ export class RegistrationRequest {
     t: bigint;
     pi: bigint;
     T: Point;
-    constructor(username: string, t: bigint, pi: bigint, T: Point){
+    constructor(username: string, t: bigint, pi: bigint, T: Point) {
         [this.username, this.t, this.pi, this.T] = [username, t, pi, T];
     }
-    static deserialize(x: any, cfg: Config): RegistrationRequest | DeserializationError {
-        if(typeof x == "string"){
+    static deserialize(
+        x: any,
+        cfg: Config,
+    ): RegistrationRequest | DeserializationError {
+        if (typeof x == "string") {
             x = JSON.parse(x);
         }
         const [username, t, pi, T] = [
             x.username,
             parseNum(x.t),
             parseNum(x.pi),
-            parsePoint(x.T, cfg.curve)
+            parsePoint(x.T, cfg.curve),
         ];
-        if(username !== null && t !== null && pi !== null && T !== null){
+        if (username !== null && t !== null && pi !== null && T !== null) {
             return new this(username, t, pi, T);
         }
-        return new DeserializationError("Failed to deserialize RegistrationRequest: invalid data");
+        return new DeserializationError(
+            "Failed to deserialize RegistrationRequest: invalid data",
+        );
     }
-    serialize(){
+    serialize() {
         return {
             username: this.username,
             t: this.t.toString(16),
             pi: this.pi.toString(16),
-            T: this.T.toHex()
+            T: this.T.toHex(),
         };
     }
 }
@@ -87,30 +92,35 @@ export class UserCredentials {
     PI3: ZKP;
     pi: bigint;
     T: Point;
-    constructor(X3: Point, PI3: ZKP, pi: bigint, T: Point){
+    constructor(X3: Point, PI3: ZKP, pi: bigint, T: Point) {
         [this.X3, this.PI3, this.pi, this.T] = [X3, PI3, pi, T];
     }
-    static deserialize(x: any, cfg: Config): UserCredentials | DeserializationError {
-        if(typeof x == "string"){
+    static deserialize(
+        x: any,
+        cfg: Config,
+    ): UserCredentials | DeserializationError {
+        if (typeof x == "string") {
             x = JSON.parse(x);
         }
         const [X3, PI3, pi, T] = [
             parsePoint(x.X3, cfg.curve),
             parseZKP(x.PI3, cfg.curve),
             parseNum(x.pi),
-            parsePoint(x.T, cfg.curve)
+            parsePoint(x.T, cfg.curve),
         ];
-        if(X3 !== null && PI3 !== null && pi !== null && T !== null){
+        if (X3 !== null && PI3 !== null && pi !== null && T !== null) {
             return new this(X3, PI3, pi, T);
         }
-        return new DeserializationError("Failed to deserialize UserCredentials: invalid data");
+        return new DeserializationError(
+            "Failed to deserialize UserCredentials: invalid data",
+        );
     }
-    serialize(){
+    serialize() {
         return {
             X3: this.X3.toHex(),
-            PI3: {V: this.PI3.V.toHex(), r: this.PI3.r.toString(16)},
+            PI3: { V: this.PI3.V.toHex(), r: this.PI3.r.toString(16) },
             pi: this.pi.toString(16),
-            T: this.T.toHex()
+            T: this.T.toHex(),
         };
     }
 }
@@ -120,30 +130,35 @@ export class AuthInitRequest {
     X2: Point;
     PI1: ZKP;
     PI2: ZKP;
-    constructor(X1: Point, X2: Point, PI1: ZKP, PI2: ZKP){
+    constructor(X1: Point, X2: Point, PI1: ZKP, PI2: ZKP) {
         [this.X1, this.X2, this.PI1, this.PI2] = [X1, X2, PI1, PI2];
     }
-    static deserialize(x: any, cfg: Config): AuthInitRequest | DeserializationError {
-        if(typeof x == "string"){
+    static deserialize(
+        x: any,
+        cfg: Config,
+    ): AuthInitRequest | DeserializationError {
+        if (typeof x == "string") {
             x = JSON.parse(x);
         }
         const [X1, X2, PI1, PI2] = [
             parsePoint(x.X1, cfg.curve),
             parsePoint(x.X2, cfg.curve),
             parseZKP(x.PI1, cfg.curve),
-            parseZKP(x.PI2, cfg.curve)
+            parseZKP(x.PI2, cfg.curve),
         ];
-        if(X1 !== null && X2 !== null && PI1 !== null && PI2 !== null){
+        if (X1 !== null && X2 !== null && PI1 !== null && PI2 !== null) {
             return new this(X1, X2, PI1, PI2);
         }
-        return new DeserializationError("Failed to deserialize AuthInitRequest: invalid data");
+        return new DeserializationError(
+            "Failed to deserialize AuthInitRequest: invalid data",
+        );
     }
-    serialize(){
+    serialize() {
         return {
             X1: this.X1.toHex(),
             X2: this.X2.toHex(),
-            PI1: {V: this.PI1.V.toHex(), r: this.PI1.r.toString(16)},
-            PI2: {V: this.PI2.V.toHex(), r: this.PI2.r.toString(16)}
+            PI1: { V: this.PI1.V.toHex(), r: this.PI1.r.toString(16) },
+            PI2: { V: this.PI2.V.toHex(), r: this.PI2.r.toString(16) },
         };
     }
 }
@@ -161,11 +176,40 @@ export class AuthInitialValues {
     PI2: ZKP;
     PI3: ZKP;
     PIBeta: ZKP;
-    constructor(T: Point, pi: bigint, x4: bigint, X1: Point, X2: Point, X3: Point, X4: Point, beta: Point, PI1: ZKP, PI2: ZKP, PI3: ZKP, PIBeta: ZKP){
-        [this.T, this.pi, this.x4, this.X1, this.X2, this.X3, this.X4, this.beta, this.PI1, this.PI2, this.PI3, this.PIBeta] = [T, pi, x4, X1, X2, X3, X4, beta, PI1, PI2, PI3, PIBeta];
+    constructor(
+        T: Point,
+        pi: bigint,
+        x4: bigint,
+        X1: Point,
+        X2: Point,
+        X3: Point,
+        X4: Point,
+        beta: Point,
+        PI1: ZKP,
+        PI2: ZKP,
+        PI3: ZKP,
+        PIBeta: ZKP,
+    ) {
+        [
+            this.T,
+            this.pi,
+            this.x4,
+            this.X1,
+            this.X2,
+            this.X3,
+            this.X4,
+            this.beta,
+            this.PI1,
+            this.PI2,
+            this.PI3,
+            this.PIBeta,
+        ] = [T, pi, x4, X1, X2, X3, X4, beta, PI1, PI2, PI3, PIBeta];
     }
-    static deserialize(x: any, cfg: Config): AuthInitialValues | DeserializationError {
-        if(typeof x == "string"){
+    static deserialize(
+        x: any,
+        cfg: Config,
+    ): AuthInitialValues | DeserializationError {
+        if (typeof x == "string") {
             x = JSON.parse(x);
         }
         const [T, pi, x4, X1, X2, X3, X4, beta, PI1, PI2, PI3, PIBeta] = [
@@ -180,14 +224,42 @@ export class AuthInitialValues {
             parseZKP(x.PI1, cfg.curve),
             parseZKP(x.PI2, cfg.curve),
             parseZKP(x.PI3, cfg.curve),
-            parseZKP(x.PIBeta, cfg.curve)
+            parseZKP(x.PIBeta, cfg.curve),
         ];
-        if(T !== null && pi !== null && x4 !== null && X1 !== null && X2 !== null && X3 !== null && X4 !== null && beta !== null && PI1 !== null && PI2 !== null && PI3 !== null && PIBeta !== null){
-            return new this(T, pi, x4, X1, X2, X3, X4, beta, PI1, PI2, PI3, PIBeta);
+        if (
+            T !== null &&
+            pi !== null &&
+            x4 !== null &&
+            X1 !== null &&
+            X2 !== null &&
+            X3 !== null &&
+            X4 !== null &&
+            beta !== null &&
+            PI1 !== null &&
+            PI2 !== null &&
+            PI3 !== null &&
+            PIBeta !== null
+        ) {
+            return new this(
+                T,
+                pi,
+                x4,
+                X1,
+                X2,
+                X3,
+                X4,
+                beta,
+                PI1,
+                PI2,
+                PI3,
+                PIBeta,
+            );
         }
-        return new DeserializationError("Failed to deserialize AuthInitialValues: invalid data");
+        return new DeserializationError(
+            "Failed to deserialize AuthInitialValues: invalid data",
+        );
     }
-    serialize(){
+    serialize() {
         return {
             T: this.T.toHex(),
             pi: this.pi.toString(16),
@@ -197,10 +269,10 @@ export class AuthInitialValues {
             X3: this.X3.toHex(),
             X4: this.X4.toHex(),
             beta: this.beta.toHex(),
-            PI1: {V: this.PI1.V.toHex(), r: this.PI1.r.toString(16)},
-            PI2: {V: this.PI2.V.toHex(), r: this.PI2.r.toString(16)},
-            PI3: {V: this.PI3.V.toHex(), r: this.PI3.r.toString(16)},
-            PIBeta: {V: this.PIBeta.V.toHex(), r: this.PIBeta.r.toString(16)}
+            PI1: { V: this.PI1.V.toHex(), r: this.PI1.r.toString(16) },
+            PI2: { V: this.PI2.V.toHex(), r: this.PI2.r.toString(16) },
+            PI3: { V: this.PI3.V.toHex(), r: this.PI3.r.toString(16) },
+            PIBeta: { V: this.PIBeta.V.toHex(), r: this.PIBeta.r.toString(16) },
         };
     }
 }
@@ -212,11 +284,28 @@ export class AuthInitResponse {
     PI4: ZKP;
     beta: Point;
     PIBeta: ZKP;
-    constructor(X3: Point, X4: Point, PI3: ZKP, PI4: ZKP, beta: Point, PIBeta: ZKP){
-        [this.X3, this.X4, this.PI3, this.PI4, this.beta, this.PIBeta] = [X3, X4, PI3, PI4, beta, PIBeta];
+    constructor(
+        X3: Point,
+        X4: Point,
+        PI3: ZKP,
+        PI4: ZKP,
+        beta: Point,
+        PIBeta: ZKP,
+    ) {
+        [this.X3, this.X4, this.PI3, this.PI4, this.beta, this.PIBeta] = [
+            X3,
+            X4,
+            PI3,
+            PI4,
+            beta,
+            PIBeta,
+        ];
     }
-    static deserialize(x: any, cfg: Config): AuthInitResponse | DeserializationError {
-        if(typeof x == "string"){
+    static deserialize(
+        x: any,
+        cfg: Config,
+    ): AuthInitResponse | DeserializationError {
+        if (typeof x == "string") {
             x = JSON.parse(x);
         }
         const [X3, X4, PI3, PI4, beta, PIBeta] = [
@@ -225,21 +314,30 @@ export class AuthInitResponse {
             parseZKP(x.PI3, cfg.curve),
             parseZKP(x.PI4, cfg.curve),
             parsePoint(x.beta, cfg.curve),
-            parseZKP(x.PIBeta, cfg.curve)
+            parseZKP(x.PIBeta, cfg.curve),
         ];
-        if(X3 !== null && X4 !== null && PI3 !== null && PI4 !== null && beta !== null && PIBeta !== null){
+        if (
+            X3 !== null &&
+            X4 !== null &&
+            PI3 !== null &&
+            PI4 !== null &&
+            beta !== null &&
+            PIBeta !== null
+        ) {
             return new this(X3, X4, PI3, PI4, beta, PIBeta);
         }
-        return new DeserializationError("Failed to deserialize AuthInitResponse: invalid data");
+        return new DeserializationError(
+            "Failed to deserialize AuthInitResponse: invalid data",
+        );
     }
-    serialize(){
+    serialize() {
         return {
             X3: this.X3.toHex(),
             X4: this.X4.toHex(),
-            PI3: {V: this.PI3.V.toHex(), r: this.PI3.r.toString(16)},
-            PI4: {V: this.PI4.V.toHex(), r: this.PI4.r.toString(16)},
+            PI3: { V: this.PI3.V.toHex(), r: this.PI3.r.toString(16) },
+            PI4: { V: this.PI4.V.toHex(), r: this.PI4.r.toString(16) },
             beta: this.beta.toHex(),
-            PIBeta: {V: this.PIBeta.V.toHex(), r: this.PIBeta.r.toString(16)}
+            PIBeta: { V: this.PIBeta.V.toHex(), r: this.PIBeta.r.toString(16) },
         };
     }
 }
@@ -248,29 +346,36 @@ export class AuthFinishRequest {
     alpha: Point;
     PIAlpha: ZKP;
     r: bigint;
-    constructor(alpha: Point, PIAlpha: ZKP, r: bigint){
+    constructor(alpha: Point, PIAlpha: ZKP, r: bigint) {
         [this.alpha, this.PIAlpha, this.r] = [alpha, PIAlpha, r];
     }
-    static deserialize(x: any, cfg: Config): AuthFinishRequest | DeserializationError {
-        if(typeof x == "string"){
+    static deserialize(
+        x: any,
+        cfg: Config,
+    ): AuthFinishRequest | DeserializationError {
+        if (typeof x == "string") {
             x = JSON.parse(x);
         }
         const [alpha, PIAlpha, r] = [
             parsePoint(x.alpha, cfg.curve),
             parseZKP(x.PIAlpha, cfg.curve),
-            parseNum(x.r)
+            parseNum(x.r),
         ];
-        if(alpha !== null && PIAlpha !== null && r !== null){
+        if (alpha !== null && PIAlpha !== null && r !== null) {
             return new this(alpha, PIAlpha, r);
         }
-        return new DeserializationError("Failed to deserialize AuthFinishRequest: invalid data");
+        return new DeserializationError(
+            "Failed to deserialize AuthFinishRequest: invalid data",
+        );
     }
-    serialize(){
+    serialize() {
         return {
             alpha: this.alpha.toHex(),
-            PIAlpha: {V: this.PIAlpha.V.toHex(), r: this.PIAlpha.r.toString(16)},
-            r: this.r.toString(16)
+            PIAlpha: {
+                V: this.PIAlpha.V.toHex(),
+                r: this.PIAlpha.r.toString(16),
+            },
+            r: this.r.toString(16),
         };
     }
 }
-

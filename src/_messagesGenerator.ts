@@ -11,24 +11,24 @@ const messageSpecs: MessageMap = {
         username: "string",
         t: "bigint",
         pi: "bigint",
-        T: "Point"
+        T: "Point",
     },
     UserCredentials: {
         X3: "Point",
         PI3: "ZKP",
         pi: "bigint",
-        T: "Point"
+        T: "Point",
     },
     AuthInitRequest: {
         X1: "Point",
         X2: "Point",
         PI1: "ZKP",
-        PI2: "ZKP"
+        PI2: "ZKP",
     },
     AuthInitialValues: {
         T: "Point",
         pi: "bigint",
-        x4: "bigint", 
+        x4: "bigint",
         X1: "Point",
         X2: "Point",
         X3: "Point",
@@ -37,7 +37,7 @@ const messageSpecs: MessageMap = {
         PI1: "ZKP",
         PI2: "ZKP",
         PI3: "ZKP",
-        PIBeta: "ZKP"
+        PIBeta: "ZKP",
     },
     AuthInitResponse: {
         X3: "Point",
@@ -45,14 +45,14 @@ const messageSpecs: MessageMap = {
         PI3: "ZKP",
         PI4: "ZKP",
         beta: "Point",
-        PIBeta: "ZKP"
+        PIBeta: "ZKP",
     },
     AuthFinishRequest: {
         alpha: "Point",
         PIAlpha: "ZKP",
-        r: "bigint"
-    }
-}
+        r: "bigint",
+    },
+};
 
 interface AttrMap {
     [key: string]: string;
@@ -71,18 +71,18 @@ import { p256 } from "@noble/curves/p256";
 import { p384 } from "@noble/curves/p384";
 import { p521 } from "@noble/curves/p521";
 
-function getCurve(curve: Curves){
+function getCurve(curve: Curves) {
     return {
         [Curves.P256]: p256,
         [Curves.P384]: p384,
-        [Curves.P521]: p521
+        [Curves.P521]: p521,
     }[curve];
 }
 
 function parseNum(x: any): bigint | null {
-    if(typeof x == "string"){
+    if (typeof x == "string") {
         // check for negative numbers
-        if(x.startsWith("-")){
+        if (x.startsWith("-")) {
             return -BigInt(\`0x\${x.substring(1)}\`);
         }
         return BigInt(\`0x\${x}\`);
@@ -91,17 +91,17 @@ function parseNum(x: any): bigint | null {
 }
 
 function parsePoint(x: any, curve: Curves): Point | null {
-    if(typeof x == "string"){
+    if (typeof x == "string") {
         return getCurve(curve).ProjectivePoint.fromHex(x);
     }
     return null;
 }
 
 function parseZKP(x: any, curve: Curves): ZKP | null {
-    try{
+    try {
         const [V, r] = [parsePoint(x.V, curve), parseNum(x.r)];
-        if(V && r){
-            return {V, r};
+        if (V && r) {
+            return { V, r };
         }
     } catch {}
     return null;
@@ -109,63 +109,67 @@ function parseZKP(x: any, curve: Curves): ZKP | null {
 
 export class DeserializationError extends Error {
     constructor(message: string) {
-      super(message);
-      this.name = "DeserializationError";
+        super(message);
+        this.name = "DeserializationError";
     }
 }
 
-`
+`;
 
 function indent(x: string, tabs: number): string {
     return "    ".repeat(tabs) + x;
 }
 
-for(const [cls, attrs] of Object.entries(messageSpecs)){
+for (const [cls, attrs] of Object.entries(messageSpecs)) {
     // export class ClassName {
     template += `export class ${cls} {\n`;
     // attr_1: type; ...; attr_n: type;
     const attrTypes: string[] = Object.entries(attrs).map(
-        ([attr, t]) => `${attr}: ${t}`
+        ([attr, t]) => `${attr}: ${t}`,
     );
-    template += attrTypes.map(
-        x => indent(`${x};\n`, 1)
-    ).join("");
+    template += attrTypes.map((x) => indent(`${x};\n`, 1)).join("");
     // constructor(attr_1: type, ..., attr_n: type) {
     template += indent("constructor(", 1);
     template += attrTypes.join(", ");
-    template += "){\n";
+    template += ") {\n";
     // [this.attr_1, ..., this.attr_n] = [attr_1, ..., attr_n]; }
     template += indent("[", 2);
-    template += Object.keys(attrs).map(
-        x => `this.${x}`
-    ).join(", ");
+    template += Object.keys(attrs)
+        .map((x) => `this.${x}`)
+        .join(", ");
     template += "] = [";
     template += Object.keys(attrs).join(", ");
     template += "];\n";
     template += indent("}\n", 1);
     // static deserialize(x: string, cfg: Config): ClassName | DeserializationError {
-    template += indent(`static deserialize(x: any, cfg: Config): ${cls} | DeserializationError {\n`, 1);
-    template += indent("if(typeof x == \"string\"){\n", 2);
+    template += indent("static deserialize(\n", 1);
+    template += indent("x: any,\n", 2);
+    template += indent("cfg: Config,\n", 2);
+    template += indent(`): ${cls} | DeserializationError {\n`, 1);
+    template += indent('if (typeof x == "string") {\n', 2);
     template += indent("x = JSON.parse(x);\n", 3);
     template += indent("}\n", 2);
     // const [attr_1, ..., attr_n] = [parsed.attr_1, ..., parsed.attr_n]
     template += indent("const [", 2);
     template += Object.keys(attrs).join(", ");
     template += "] = [\n";
-    template += Object.entries(attrs).map(([attr, t]) => {
-        switch(t){
-            case "string":
-                return `x.${attr}`;
-            case "bigint":
-                return `parseNum(x.${attr})`;
-            case "Point":
-                return `parsePoint(x.${attr}, cfg.curve)`;
-            case "ZKP":
-                return `parseZKP(x.${attr}, cfg.curve)`;
-            default:
-                return `x.${attr}.toString()`;
-        }
-    }).map(x => indent(x, 3)).join(",\n");
+    template += Object.entries(attrs)
+        .map(([attr, t]) => {
+            switch (t) {
+                case "string":
+                    return `x.${attr}`;
+                case "bigint":
+                    return `parseNum(x.${attr})`;
+                case "Point":
+                    return `parsePoint(x.${attr}, cfg.curve)`;
+                case "ZKP":
+                    return `parseZKP(x.${attr}, cfg.curve)`;
+                default:
+                    return `x.${attr}.toString()`;
+            }
+        })
+        .map((x) => indent(x + ",", 3))
+        .join("\n");
     template += "\n";
     template += indent("];\n", 2);
     // DEBUG: remove this
@@ -173,40 +177,43 @@ for(const [cls, attrs] of Object.entries(messageSpecs)){
     // template += Object.keys(attrs).join(", ");
     // template += "]);\n";
     // if(attr_1 !== null && ... && attr_n !== null)
-    template += indent("if(", 2);
-    template += Object.keys(attrs).map(
-        attr => `${attr} !== null`
-    ).join(" && ");
-    template += "){\n";
+    template += indent("if (", 2);
+    template += Object.keys(attrs)
+        .map((attr) => `${attr} !== null`)
+        .join(" && ");
+    template += ") {\n";
     // return new this(attr_1, ..., attr_n)
     template += indent("return new this(", 3);
     template += Object.keys(attrs).join(", ");
     template += ");\n";
     template += indent("}\n", 2);
-    template += indent(
-        `return new DeserializationError(\"Failed to deserialize ${cls}: invalid data\");\n`
-    , 2);
+    template += indent("return new DeserializationError(\n", 2);
+    template += indent(`"Failed to deserialize ${cls}: invalid data",\n`, 3);
+    template += indent(");\n", 2);
     template += indent("}\n", 1);
     // serialize() {
-    template += indent("serialize(){\n", 1);
+    template += indent("serialize() {\n", 1);
     // return JSON.stringify({attr_1: attr_1.toString(), ...})
     template += indent("return {\n", 2);
-    template += Object.entries(attrs).map(([attr, t]) => {
-        switch(t){
-            case "bigint":
-                return `${attr}: this.${attr}.toString(16)`;
-            case "Point":
-                return `${attr}: this.${attr}.toHex()`;
-            case "ZKP":
-                return `${attr}: {V: this.${attr}.V.toHex(), r: this.${attr}.r.toString(16)}`;
-            default:
-                return `${attr}: this.${attr}`;
-        }
-    }).map(x => indent(x, 3)).join(",\n");
+    template += Object.entries(attrs)
+        .map(([attr, t]) => {
+            switch (t) {
+                case "bigint":
+                    return `${attr}: this.${attr}.toString(16)`;
+                case "Point":
+                    return `${attr}: this.${attr}.toHex()`;
+                case "ZKP":
+                    return `${attr}: { V: this.${attr}.V.toHex(), r: this.${attr}.r.toString(16) }`;
+                default:
+                    return `${attr}: this.${attr}`;
+            }
+        })
+        .map((x) => indent(x + ",", 3))
+        .join("\n");
     template += "\n";
     template += indent("};\n", 2);
     template += indent("}\n", 1);
-    template += "}\n\n"
+    template += "}\n\n";
 }
 
 fs.writeFile("src/messages.ts", template, (err) => {
