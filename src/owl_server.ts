@@ -51,7 +51,6 @@ export class OwlServer extends OwlCommon {
         const X4 = this.G.multiply(x4);
         // PI4 = ZKP{x4}
         const PI4 = await this.createZKP(x4, this.G, X4, this.serverId);
-        // ???? why mod n
         const secret = this.modN(x4 * pi);
         const beta_G = X1.add(X2).add(X3);
         // beta = (X1+X2+X3) * (pi * x4)
@@ -65,20 +64,9 @@ export class OwlServer extends OwlCommon {
         );
         // package values
         const response = new AuthInitResponse(X3, X4, PI3, PI4, beta, PIBeta);
-        const initial = new AuthInitialValues(
-            T,
-            pi,
-            x4,
-            X1,
-            X2,
-            X3,
-            X4,
-            beta,
-            PI1,
-            PI2,
-            PI3,
-            PIBeta,
-        );
+        // prettier-ignore
+        const initial = new AuthInitialValues(T, pi, x4, X1, X2, X3, X4, beta,
+            PI1, PI2, PI3, PIBeta);
         return { response, initial };
     }
     async authFinish(
@@ -102,27 +90,10 @@ export class OwlServer extends OwlCommon {
         // K = (alpha - (X2 * (x4 * pi))) * x4
         const K = alpha.subtract(X2.multiply(this.modN(x4 * pi))).multiply(x4);
         // h = H(K||Transcript)
-        const h = await this.H(
-            K,
-            username,
-            X1,
-            X2,
-            PI1.h,
-            PI1.r,
-            PI2.h,
-            PI2.r,
-            this.serverId,
-            X3,
-            X4,
-            PI3.h,
-            PI3.r,
-            beta,
-            PIBeta.h,
-            PIBeta.r,
-            alpha,
-            PIAlpha.h,
-            PIAlpha.r,
-        );
+        // prettier-ignore
+        const h = await this.H(K, username, X1, X2, PI1.h, PI1.r, PI2.h, PI2.r,
+            this.serverId, X3, X4, PI3.h, PI3.r, beta, PIBeta.h, PIBeta.r,
+            alpha, PIAlpha.h, PIAlpha.r);
         // (G * r) + (T * h) ?= X1
         if (!this.G.multiply(r).add(T.multiply(h)).equals(X1)) {
             return new AuthenticationFailure();

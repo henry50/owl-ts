@@ -88,38 +88,21 @@ export class OwlClient extends OwlCommon {
         // alpha = (X1+X3+X4)*(x2 * pi)
         const alpha = alpha_G.multiply(secret);
         // PIalpha = ZKP{x2 * pi}
-        const PIalpha = await this.createZKP(secret, alpha_G, alpha, username);
+        const PIAlpha = await this.createZKP(secret, alpha_G, alpha, username);
         // K = (beta - (X4 * (x2 * pi))) * x2
         const K = beta.subtract(X4.multiply(secret)).multiply(x2);
         // h = H(K||Transcript)
-        const h = await this.H(
-            K,
-            username,
-            X1,
-            X2,
-            PI1.h,
-            PI1.r,
-            PI2.h,
-            PI2.r,
-            this.serverId,
-            X3,
-            X4,
-            PI3.h,
-            PI3.r,
-            beta,
-            PIBeta.h,
-            PIBeta.r,
-            alpha,
-            PIalpha.h,
-            PIalpha.r,
-        );
+        // prettier-ignore
+        const h = await this.H(K, username, X1, X2, PI1.h, PI1.r, PI2.h, PI2.r,
+            this.serverId, X3, X4, PI3.h, PI3.r, beta, PIBeta.h, PIBeta.r,
+            alpha, PIAlpha.h, PIAlpha.r);
         // r = x1 - (t * h) mod n
         const r = this.modN(x1 - t * h);
         // k = H(K) (mutually derived key)
         const k = await this.H(K.toRawBytes());
         return {
             key: k,
-            finishRequest: new AuthFinishRequest(alpha, PIalpha, r),
+            finishRequest: new AuthFinishRequest(alpha, PIAlpha, r),
         };
     }
 }
