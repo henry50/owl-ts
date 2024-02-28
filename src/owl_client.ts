@@ -83,16 +83,15 @@ export class OwlClient extends OwlCommon {
         ) {
             return new ZKPVerificationFailure();
         }
-        // ????
-        const secret = this.modN(x2 + pi);
+        const secret = this.modN(x2 * pi);
         const alpha_G = X1.add(X3).add(X4);
-        // alpha = (X1+X3+X4)*(x2 + pi)
+        // alpha = (X1+X3+X4)*(x2 * pi)
         const alpha = alpha_G.multiply(secret);
-        // PIalpha = ZKP{x2 + pi}
+        // PIalpha = ZKP{x2 * pi}
         const PIalpha = await this.createZKP(secret, alpha_G, alpha, username);
-        // K = (beta - (X4 * (x2 + pi))) * x2
+        // K = (beta - (X4 * (x2 * pi))) * x2
         const K = beta.subtract(X4.multiply(secret)).multiply(x2);
-        // h = H(K||Transcript) ?? % p
+        // h = H(K||Transcript)
         const h = await this.H(
             K,
             username,

@@ -52,11 +52,11 @@ export class OwlServer extends OwlCommon {
         // PI4 = ZKP{x4}
         const PI4 = await this.createZKP(x4, this.G, X4, this.serverId);
         // ???? why mod n
-        const secret = this.modN(x4 + pi);
+        const secret = this.modN(x4 * pi);
         const beta_G = X1.add(X2).add(X3);
-        // beta = (X1+X2+X3) * (pi+x4)
+        // beta = (X1+X2+X3) * (pi * x4)
         const beta = beta_G.multiply(secret);
-        // PIBeta = ZKP{pi + x4}
+        // PIBeta = ZKP{pi * x4}
         const PIBeta = await this.createZKP(
             secret,
             beta_G,
@@ -99,9 +99,8 @@ export class OwlServer extends OwlCommon {
         ) {
             return new ZKPVerificationFailure();
         }
-        // ???? why mod n
-        // K = (alpha - (X2 * (x4 + pi))) * x4
-        const K = alpha.subtract(X2.multiply(this.modN(x4 + pi))).multiply(x4);
+        // K = (alpha - (X2 * (x4 * pi))) * x4
+        const K = alpha.subtract(X2.multiply(this.modN(x4 * pi))).multiply(x4);
         // h = H(K||Transcript)
         const h = await this.H(
             K,
