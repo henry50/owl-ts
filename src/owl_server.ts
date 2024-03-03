@@ -33,18 +33,13 @@ export class OwlServer extends OwlCommon {
     > {
         const { X1, X2, PI1, PI2 } = request;
         const { X3, PI3, pi, T } = credentials;
+        // verify ZKPs
         if (
-            !(
-                (await this.verifyZKP(PI1, this.G, X1, username)) &&
-                (await this.verifyZKP(PI2, this.G, X2, username))
-            )
+            !(await this.verifyZKP(PI1, this.G, X1, username)) ||
+            !(await this.verifyZKP(PI2, this.G, X2, username))
         ) {
             return new ZKPVerificationFailure();
         }
-        // ??
-        // if(X2.mod(this.config.p).eq(1)){
-        //     return new Error("Invalid value given for X2");
-        // }
         // x4 = [1, n-1]
         const x4 = this.rand(1n, this.n - 1n);
         // X4 = G * x4
@@ -77,14 +72,9 @@ export class OwlServer extends OwlCommon {
         const { T, pi, x4, X1, X2, X3, X4, beta, PI1, PI2, PI3, PIBeta } =
             initial;
         const { alpha, PIAlpha, r } = request;
-        if (
-            !(await this.verifyZKP(
-                PIAlpha,
-                X1.add(X3).add(X4),
-                alpha,
-                username,
-            ))
-        ) {
+        // verify alpha ZKP
+        const alpha_G = X1.add(X3).add(X4);
+        if (!(await this.verifyZKP(PIAlpha, alpha_G, alpha, username))) {
             return new ZKPVerificationFailure();
         }
         // K = (alpha - (X2 * (x4 * pi))) * x4

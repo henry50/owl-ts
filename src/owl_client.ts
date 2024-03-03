@@ -65,21 +65,12 @@ export class OwlClient extends OwlCommon {
     > {
         const { username, t, pi, x1, x2, X1, X2, PI1, PI2 } = this.initValues;
         const { X3, X4, PI3, PI4, beta, PIBeta } = request;
-        // verify ZKPs ?? and check X4 is valid
+        // verify ZKPs
+        const beta_G = X1.add(X2).add(X3);
         if (
-            !(
-                (
-                    (await this.verifyZKP(PI3, this.G, X3, this.serverId)) &&
-                    (await this.verifyZKP(PI4, this.G, X4, this.serverId)) &&
-                    (await this.verifyZKP(
-                        PIBeta,
-                        X1.add(X2).add(X3),
-                        beta,
-                        this.serverId,
-                    ))
-                ) //&&
-                //  !X4.mod(this.config.p).eq(1) ??
-            )
+            !(await this.verifyZKP(PI3, this.G, X3, this.serverId)) ||
+            !(await this.verifyZKP(PI4, this.G, X4, this.serverId)) ||
+            !(await this.verifyZKP(PIBeta, beta_G, beta, this.serverId))
         ) {
             return new ZKPVerificationFailure();
         }
