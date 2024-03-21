@@ -1,21 +1,30 @@
 {
   "name": "owl-ts",
   "version": "1.0.0",
-  "description": "",
+  "description": "A Typescript implementation of the Owl augmented Password Authenticated Key Exchange (aPAKE) protocol.",
   "main": "./lib/index.js",
   "type": "module",
   "types": "./lib/index.d.ts",
   "scripts": {
-    "build": "npx tsx ./src/_messagesGenerator.ts && npx tsc",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npx tsx ./src/_messagesGenerator.ts && npm run format && npx tsc",
+    "test": "npx jest",
     "format": "npx prettier . --write"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "owl",
+    "password",
+    "key exchange",
+    "crypto",
+    "cryptography"
+  ],
+  "author": "Henry Lunn",
+  "license": "MIT",
   "devDependencies": {
+    "@types/jest": "^29.5.12",
     "@types/node": "^20.11.17",
+    "jest": "^29.7.0",
     "prettier": "^3.2.5",
+    "ts-jest": "^29.1.2",
     "tsx": "^4.7.1",
     "typescript": "^5.3.3"
   },
