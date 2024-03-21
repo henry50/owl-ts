@@ -58,8 +58,10 @@ export class OwlClient extends OwlCommon {
     }
     async authFinish(request: AuthInitResponse): Promise<
         | {
-              key: bigint;
               finishRequest: AuthFinishRequest;
+              key: ArrayBuffer;
+              kc: string;
+              kcTest: string;
           }
         | Error
     > {
@@ -90,10 +92,16 @@ export class OwlClient extends OwlCommon {
         // r = x1 - (t * h) mod n
         const r = this.modN(x1 - t * h);
         // k = H(K) (mutually derived key)
-        const k = await this.H(K.toRawBytes());
+        const k = await crypto.subtle.digest("SHA-256", K.toRawBytes());
+        // kc = HMAC(K || "KC" || userId || serverId || X1 || X2 || X3 || X4)
+        const kc = await this.HMAC(K, username, this.serverId, X1, X2, X3, X4);
+        // prettier-ignore
+        const kcTest = await this.HMAC(K, this.serverId, username, X3, X4, X1, X2);
         return {
-            key: k,
             finishRequest: new AuthFinishRequest(alpha, PIAlpha, r),
+            key: k,
+            kc: kc,
+            kcTest: kcTest,
         };
     }
 }

@@ -3,6 +3,7 @@ import { p384 } from "@noble/curves/p384";
 import { p521 } from "@noble/curves/p521";
 import { ProjPointType } from "@noble/curves/abstract/weierstrass";
 import {
+    bytesToHex,
     bytesToNumberBE,
     concatBytes,
     numberToVarBytesBE,
@@ -85,15 +86,14 @@ export abstract class OwlCommon {
         return from + (randVal % (range + 1n));
     }
     /**
-     * Hash any number of Uint8Array, string, bigint or Point to a bigint
-     * @param args Items to hash
-     * @returns Hash output as bigint
+     * Concatenate any number of Uint8Array, string, bigint or Point to a single Uint8Array
+     * @param args Items to concatenate
+     * @returns Uint8Array
      */
-    async H(
+    concatToBytes(
         ...args: Array<Uint8Array | string | bigint | Point>
-    ): Promise<bigint> {
-        // convert each acceptable input type to Uint8Array and concatenate
-        const bytes = concatBytes(
+    ): Uint8Array {
+        return concatBytes(
             ...args.map((arg) => {
                 if (arg instanceof Uint8Array) {
                     return arg;
@@ -105,12 +105,67 @@ export abstract class OwlCommon {
                     // Point
                     return arg.toRawBytes();
                 } else {
-                    throw new Error("Unsupported type in concat");
+                    throw new Error("Unsupported type in concatToBytes");
                 }
             }),
         );
+    }
+    /**
+     * Hash any number of Uint8Array, string, bigint or Point to a bigint
+     * @param args Items to hash
+     * @returns Hash output as bigint
+     */
+    async H(
+        ...args: Array<Uint8Array | string | bigint | Point>
+    ): Promise<bigint> {
+        // convert each acceptable input type to Uint8Array and concatenate
+        const bytes = this.concatToBytes(...args);
         const hashBuffer = await crypto.subtle.digest("SHA-256", bytes);
         return bytesToNumberBE(new Uint8Array(hashBuffer));
+    }
+    /**
+     * Derive HMAC for key confirmation
+     * @param kcKey Key confirmation key
+     * @param senderId Sender identity
+     * @param receiverId Receiver identity
+     * @param sender1 First sender value
+     * @param sender2 Second sender value
+     * @param receiver1 First receiver value
+     * @param receiver2 Second receiver value
+     * @returns HMAC signature as hexadecimal string
+     */
+    async HMAC(
+        K: Point,
+        senderId: string,
+        receiverId: string,
+        sender1: Point,
+        sender2: Point,
+        receiver1: Point,
+        receiver2: Point,
+    ): Promise<string> {
+        const kcKey = await crypto.subtle.digest(
+            "SHA-256",
+            this.concatToBytes(K, "KC"),
+        );
+        const k = await crypto.subtle.importKey(
+            "raw",
+            kcKey,
+            { name: "HMAC", hash: "SHA-256" },
+            false,
+            ["sign"],
+        );
+        const bytes = this.concatToBytes(
+            new Uint8Array(kcKey),
+            senderId,
+            receiverId,
+            sender1,
+            sender2,
+            receiver1,
+            receiver2,
+        );
+        return bytesToHex(
+            new Uint8Array(await crypto.subtle.sign("HMAC", k, bytes)),
+        );
     }
     /**
      * Create a Schnorr Non-Interactive Zero Knowledge Proof (NIZKP)

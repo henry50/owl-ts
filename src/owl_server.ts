@@ -68,7 +68,15 @@ export class OwlServer extends OwlCommon {
         username: string,
         request: AuthFinishRequest,
         initial: AuthInitialValues,
-    ): Promise<bigint | AuthenticationFailure | ZKPVerificationFailure> {
+    ): Promise<
+        | {
+              key: ArrayBuffer;
+              kc: string;
+              kcTest: string;
+          }
+        | AuthenticationFailure
+        | ZKPVerificationFailure
+    > {
         const { T, pi, x4, X1, X2, X3, X4, beta, PI1, PI2, PI3, PIBeta } =
             initial;
         const { alpha, PIAlpha, r } = request;
@@ -88,7 +96,13 @@ export class OwlServer extends OwlCommon {
         if (!this.G.multiply(r).add(T.multiply(h)).equals(X1)) {
             return new AuthenticationFailure();
         }
-        const k = await this.H(K.toRawBytes());
-        return k;
+        // k = H(K)
+        const k = await crypto.subtle.digest("SHA-256", K.toRawBytes());
+        // kc = HMAC(K || "KC" || serverId || userId || X3 || X4 || X1 || X2)
+        const kc = await this.HMAC(K, this.serverId, username, X3, X4, X1, X2);
+        // check received key confirmation matches expected result
+        // prettier-ignore
+        const kcTest = await this.HMAC(K, username, this.serverId, X1, X2, X3, X4);
+        return { key: k, kc, kcTest };
     }
 }
