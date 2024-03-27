@@ -1,5 +1,6 @@
 import { OwlCommon, Curves } from "../src/owl_common";
 import { p256 } from "@noble/curves/p256";
+import { describe, test, expect } from "@jest/globals"
 
 class TestCommon extends OwlCommon {}
 const common = new TestCommon({
