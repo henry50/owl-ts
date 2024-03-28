@@ -15,8 +15,9 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 20
-      - name: Build and test
+      - name: Build
         run: |
           npm ci
           npm run build
-          npm test
+      - name: Test
+        run: npm test
