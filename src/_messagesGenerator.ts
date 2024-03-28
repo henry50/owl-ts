@@ -95,7 +95,7 @@ function parsePoint(x: any, curve: Curves): Point | null {
     return null;
 }
 
-function parseZKP(x: any, curve: Curves): ZKP | null {
+function parseZKP(x: any): ZKP | null {
     try {
         const [h, r] = [parseNum(x.h), parseNum(x.r)];
         if (h && r) {
@@ -161,7 +161,7 @@ for (const [cls, attrs] of Object.entries(messageSpecs)) {
                 case "Point":
                     return `parsePoint(x.${attr}, cfg.curve)`;
                 case "ZKP":
-                    return `parseZKP(x.${attr}, cfg.curve)`;
+                    return `parseZKP(x.${attr})`;
                 default:
                     return `x.${attr}.toString()`;
             }
@@ -170,11 +170,6 @@ for (const [cls, attrs] of Object.entries(messageSpecs)) {
         .join("\n");
     template += "\n";
     template += indent("];\n", 2);
-    // DEBUG: remove this
-    // template += indent("console.log([", 2);
-    // template += Object.keys(attrs).join(", ");
-    // template += "]);\n";
-    // if(attr_1 !== null && ... && attr_n !== null)
     template += indent("if (", 2);
     template += Object.keys(attrs)
         .map((attr) => `${attr} !== null`)

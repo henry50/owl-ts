@@ -63,7 +63,7 @@ export class OwlClient extends OwlCommon {
               kc: string;
               kcTest: string;
           }
-        | Error
+        | ZKPVerificationFailure
     > {
         const { username, t, pi, x1, x2, X1, X2, PI1, PI2 } = this.initValues;
         const { X3, X4, PI3, PI4, beta, PIBeta } = request;

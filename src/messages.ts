@@ -32,7 +32,7 @@ function parsePoint(x: any, curve: Curves): Point | null {
     return null;
 }
 
-function parseZKP(x: any, curve: Curves): ZKP | null {
+function parseZKP(x: any): ZKP | null {
     try {
         const [h, r] = [parseNum(x.h), parseNum(x.r)];
         if (h && r) {
@@ -95,7 +95,7 @@ export class UserCredentials {
         }
         const [X3, PI3, pi, T] = [
             parsePoint(x.X3, cfg.curve),
-            parseZKP(x.PI3, cfg.curve),
+            parseZKP(x.PI3),
             parseNum(x.pi),
             parsePoint(x.T, cfg.curve),
         ];
@@ -134,8 +134,8 @@ export class AuthInitRequest {
         const [X1, X2, PI1, PI2] = [
             parsePoint(x.X1, cfg.curve),
             parsePoint(x.X2, cfg.curve),
-            parseZKP(x.PI1, cfg.curve),
-            parseZKP(x.PI2, cfg.curve),
+            parseZKP(x.PI1),
+            parseZKP(x.PI2),
         ];
         if (X1 !== null && X2 !== null && PI1 !== null && PI2 !== null) {
             return new this(X1, X2, PI1, PI2);
@@ -212,10 +212,10 @@ export class AuthInitialValues {
             parsePoint(x.X3, cfg.curve),
             parsePoint(x.X4, cfg.curve),
             parsePoint(x.beta, cfg.curve),
-            parseZKP(x.PI1, cfg.curve),
-            parseZKP(x.PI2, cfg.curve),
-            parseZKP(x.PI3, cfg.curve),
-            parseZKP(x.PIBeta, cfg.curve),
+            parseZKP(x.PI1),
+            parseZKP(x.PI2),
+            parseZKP(x.PI3),
+            parseZKP(x.PIBeta),
         ];
         if (
             T !== null &&
@@ -305,10 +305,10 @@ export class AuthInitResponse {
         const [X3, X4, PI3, PI4, beta, PIBeta] = [
             parsePoint(x.X3, cfg.curve),
             parsePoint(x.X4, cfg.curve),
-            parseZKP(x.PI3, cfg.curve),
-            parseZKP(x.PI4, cfg.curve),
+            parseZKP(x.PI3),
+            parseZKP(x.PI4),
             parsePoint(x.beta, cfg.curve),
-            parseZKP(x.PIBeta, cfg.curve),
+            parseZKP(x.PIBeta),
         ];
         if (
             X3 !== null &&
@@ -355,7 +355,7 @@ export class AuthFinishRequest {
         }
         const [alpha, PIAlpha, r] = [
             parsePoint(x.alpha, cfg.curve),
-            parseZKP(x.PIAlpha, cfg.curve),
+            parseZKP(x.PIAlpha),
             parseNum(x.r),
         ];
         if (alpha !== null && PIAlpha !== null && r !== null) {
