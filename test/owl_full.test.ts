@@ -12,7 +12,7 @@ import {
     AuthenticationFailure,
     UserCredentials,
     AuthInitialValues,
-} from "../src/index";
+} from "../src";
 import { describe, test, expect } from "@jest/globals";
 
 /**
@@ -25,8 +25,8 @@ const cfg = {
 };
 
 const database: {
-    users: { [id: string]: UserCredentials };
-    initialValues: { [id: string]: AuthInitialValues };
+    users: { [id: string]: any };
+    initialValues: { [id: string]: any };
 } = { users: {}, initialValues: {} };
 
 async function registrationTest(cfg: Config) {
@@ -45,7 +45,8 @@ async function registrationTest(cfg: Config) {
     if (parsedRequest instanceof DeserializationError) {
         throw parsedRequest;
     }
-    database.users[username] = await server.register(parsedRequest);
+    const userCredentials = await server.register(parsedRequest);
+    database.users[username] = userCredentials.serialize();
 }
 
 async function authTest(username: string, password: string, cfg: Config) {
@@ -62,16 +63,24 @@ async function authTest(username: string, password: string, cfg: Config) {
     if (parsedInitRequest instanceof DeserializationError) {
         throw parsedInitRequest;
     }
+    const parsedCredentials = UserCredentials.deserialize(
+        database.users[username],
+        cfg,
+    );
+    expect(parsedCredentials).not.toBeInstanceOf(DeserializationError);
+    if (parsedCredentials instanceof DeserializationError) {
+        throw parsedCredentials;
+    }
     const serverAuthInit = await server.authInit(
         username,
         parsedInitRequest,
-        database.users[username],
+        parsedCredentials,
     );
     expect(serverAuthInit).not.toBeInstanceOf(ZKPVerificationFailure);
     if (serverAuthInit instanceof ZKPVerificationFailure) {
         throw serverAuthInit;
     }
-    database.initialValues[username] = serverAuthInit.initial;
+    database.initialValues[username] = serverAuthInit.initial.serialize();
     const initResponse = serverAuthInit.response;
     const jsonInitResponse = initResponse.serialize();
 
@@ -109,10 +118,18 @@ async function authTest(username: string, password: string, cfg: Config) {
     if (parsedFinishRequest instanceof DeserializationError) {
         throw parsedFinishRequest;
     }
+    const parsedInitialValues = AuthInitialValues.deserialize(
+        database.initialValues[username],
+        cfg,
+    );
+    expect(parsedInitialValues).not.toBeInstanceOf(DeserializationError);
+    if (parsedInitialValues instanceof DeserializationError) {
+        throw parsedInitialValues;
+    }
     const serverAuthFinish = await server.authFinish(
         username,
         parsedFinishRequest,
-        database.initialValues[username],
+        parsedInitialValues,
     );
     expect(serverAuthFinish).not.toBeInstanceOf(ZKPVerificationFailure);
     if (serverAuthFinish instanceof Error) {
