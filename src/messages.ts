@@ -15,21 +15,19 @@ function getCurve(curve: Curves) {
 }
 
 function parseNum(x: any): bigint | null {
-    if (typeof x == "string") {
-        // check for negative numbers
-        if (x.startsWith("-")) {
-            return -BigInt(`0x${x.substring(1)}`);
-        }
+    try {
         return BigInt(`0x${x}`);
+    } catch {
+        return null;
     }
-    return null;
 }
 
 function parsePoint(x: any, curve: Curves): Point | null {
-    if (typeof x == "string") {
+    try {
         return getCurve(curve).ProjectivePoint.fromHex(x);
+    } catch {
+        return null;
     }
-    return null;
 }
 
 function parseZKP(x: any): ZKP | null {
