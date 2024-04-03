@@ -18,8 +18,15 @@ interface ClientInitVals {
     PI2: ZKP;
 }
 
+export class UninitialisedClientError extends Error {
+    constructor() {
+        super("authInit must be run before authFinish");
+        this.name = "UninitialisedClientError";
+    }
+}
+
 export class OwlClient extends OwlCommon {
-    initValues!: ClientInitVals;
+    initValues?: ClientInitVals;
     async register(
         username: string,
         password: string,
@@ -56,7 +63,7 @@ export class OwlClient extends OwlCommon {
         this.initValues = { username, t, pi, x1, x2, X1, X2, PI1, PI2 };
         return new AuthInitRequest(X1, X2, PI1, PI2);
     }
-    async authFinish(request: AuthInitResponse): Promise<
+    async authFinish(response: AuthInitResponse): Promise<
         | {
               finishRequest: AuthFinishRequest;
               key: ArrayBuffer;
@@ -64,9 +71,14 @@ export class OwlClient extends OwlCommon {
               kcTest: string;
           }
         | ZKPVerificationFailure
+        | UninitialisedClientError
     > {
+        // check authInit has been run
+        if (!this.initValues) {
+            return new UninitialisedClientError();
+        }
         const { username, t, pi, x1, x2, X1, X2, PI1, PI2 } = this.initValues;
-        const { X3, X4, PI3, PI4, beta, PIBeta } = request;
+        const { X3, X4, PI3, PI4, beta, PIBeta } = response;
         // verify ZKPs
         const beta_G = X1.add(X2).add(X3);
         if (
