@@ -12,6 +12,7 @@ import {
     AuthenticationFailure,
     UserCredentials,
     AuthInitialValues,
+    UninitialisedClientError,
 } from "../src";
 import { describe, test, expect } from "@jest/globals";
 
@@ -96,7 +97,8 @@ async function authTest(username: string, password: string, cfg: Config) {
     }
     const clientAuthFinish = await client.authFinish(parsedInitResponse);
     expect(clientAuthFinish).not.toBeInstanceOf(ZKPVerificationFailure);
-    if (clientAuthFinish instanceof ZKPVerificationFailure) {
+    expect(clientAuthFinish).not.toBeInstanceOf(UninitialisedClientError);
+    if (clientAuthFinish instanceof Error) {
         throw clientAuthFinish;
     }
     const clientDerivedKey = clientAuthFinish.key;

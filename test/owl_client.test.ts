@@ -3,6 +3,7 @@ import {
     AuthInitResponse,
     Curves,
     OwlClient,
+    UninitialisedClientError,
     ZKPVerificationFailure,
 } from "../src";
 import { p256 } from "@noble/curves/p256";
@@ -60,29 +61,38 @@ const ValidAuthInitResponse = AuthInitResponse.deserialize(
 ) as AuthInitResponse;
 
 describe("Test Owl client", () => {
-    const client = new OwlClient(cfg);
     test("Registration is successful", async () => {
+        const client = new OwlClient(cfg);
         expect(
             await client.register("test-user", "secret-pass"),
         ).not.toBeInstanceOf(Error);
     });
     test("Initial authorisation is successful", async () => {
+        const client = new OwlClient(cfg);
         expect(
             await client.authInit("username", "password"),
         ).not.toBeInstanceOf(Error);
     });
     test("Final authorisation is successful with valid AuthInitResponse", async () => {
+        const client = new OwlClient(cfg);
         client.initValues = ValidClientInitVals; // mock successful AuthInit values
         expect(
             await client.authFinish(ValidAuthInitResponse),
         ).not.toBeInstanceOf(Error);
     });
     test("Final authorisation fails with invalid ZKP AuthInitResponse", async () => {
+        const client = new OwlClient(cfg);
         client.initValues = ValidClientInitVals; // mock successful AuthInit values
         const invalid = Object.assign({}, ValidAuthInitResponse);
         invalid.X3 = invalid.X4; // X3=X4 will cause verification of PI3 to fail
         expect(await client.authFinish(invalid)).toBeInstanceOf(
             ZKPVerificationFailure,
+        );
+    });
+    test("Final authorisation fails without initial authorisation", async () => {
+        const client = new OwlClient(cfg);
+        expect(await client.authFinish(ValidAuthInitResponse)).toBeInstanceOf(
+            UninitialisedClientError,
         );
     });
 });
