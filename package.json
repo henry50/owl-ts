@@ -21,6 +21,7 @@
     "cryptography"
   ],
   "author": "Henry Lunn",
+  "repository": "github:henry50/owl-ts",
   "license": "MIT",
   "devDependencies": {
     "@jest/globals": "^29.7.0",
