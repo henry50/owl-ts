@@ -1,2 +1,5 @@
-**/*
-!lib/*
+# Ignore everything except the lib directory and its contents
+# README, package.json and LICENSE are not ignored by default
+*
+!*/
+!lib/**
