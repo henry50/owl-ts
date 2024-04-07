@@ -2,8 +2,8 @@
 
 An implementation of the Owl augmented PAKE protocol in Typescript, based on the [Owl paper](https://eprint.iacr.org/2023/768.pdf). 
 
-## Install
-TODO: Once the package has been uploaded to npm, it can be installed with
+## Installation
+To install the package, run
 ```
 npm install owl-ts
 ```
