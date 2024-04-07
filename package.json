@@ -1,6 +1,6 @@
 {
   "name": "owl-ts",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A Typescript implementation of the Owl augmented Password Authenticated Key Exchange (aPAKE) protocol.",
   "main": "./lib/index.js",
   "type": "module",
