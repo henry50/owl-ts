@@ -80,20 +80,20 @@ export class OwlClient extends OwlCommon {
         const { username, t, pi, x1, x2, X1, X2, PI1, PI2 } = this.initValues;
         const { X3, X4, PI3, PI4, beta, PIBeta } = response;
         // verify ZKPs
-        const beta_G = X1.add(X2).add(X3);
+        const betaG = X1.add(X2).add(X3);
         if (
             !(await this.verifyZKP(PI3, this.G, X3, this.serverId)) ||
             !(await this.verifyZKP(PI4, this.G, X4, this.serverId)) ||
-            !(await this.verifyZKP(PIBeta, beta_G, beta, this.serverId))
+            !(await this.verifyZKP(PIBeta, betaG, beta, this.serverId))
         ) {
             return new ZKPVerificationFailure();
         }
         const secret = this.modN(x2 * pi);
-        const alpha_G = X1.add(X3).add(X4);
+        const alphaG = X1.add(X3).add(X4);
         // alpha = (X1+X3+X4)*(x2 * pi)
-        const alpha = alpha_G.multiply(secret);
+        const alpha = alphaG.multiply(secret);
         // PIalpha = ZKP{x2 * pi}
-        const PIAlpha = await this.createZKP(secret, alpha_G, alpha, username);
+        const PIAlpha = await this.createZKP(secret, alphaG, alpha, username);
         // K = (beta - (X4 * (x2 * pi))) * x2
         const K = beta.subtract(X4.multiply(secret)).multiply(x2);
         // h = H(K||Transcript)
