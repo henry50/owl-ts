@@ -1,5 +1,9 @@
-import { describe, test, expect } from "@jest/globals";
-import { AuthFinishRequest, Curves, DeserializationError } from "../src";
+import { describe, expect, test } from "@jest/globals";
+import {
+    AuthFinishRequest,
+    Curves,
+    DeserializationError
+} from "../src";
 
 const cfg = {
     curve: Curves.P256,
@@ -43,6 +47,16 @@ describe("Test message deserialization", () => {
                 },
                 cfg,
             ),
+        );
+    });
+    test("Undefined cannot be parsed", () => {
+        expect(AuthFinishRequest.deserialize(undefined, cfg)).toBeInstanceOf(
+            DeserializationError,
+        );
+    });
+    test("Null cannot be parsed", () => {
+        expect(AuthFinishRequest.deserialize(null, cfg)).toBeInstanceOf(
+            DeserializationError,
         );
     });
     test("Object with invalid Point cannot be parsed", () => {

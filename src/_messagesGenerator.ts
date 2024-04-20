@@ -145,8 +145,10 @@ for (const [cls, attrs] of Object.entries(messageSpecs)) {
     template += indent('if (typeof x == "string") {\n', 2);
     template += indent("x = JSON.parse(x);\n", 3);
     template += indent("}\n", 2);
+    // if(!!x) {
+    template += indent("if (!!x) {\n", 2);
     // const [attr_1, ..., attr_n] = [parsed.attr_1, ..., parsed.attr_n]
-    template += indent("const [", 2);
+    template += indent("const [", 3);
     template += Object.keys(attrs).join(", ");
     template += "] = [\n";
     template += Object.entries(attrs)
@@ -164,19 +166,20 @@ for (const [cls, attrs] of Object.entries(messageSpecs)) {
                     return `x.${attr}.toString()`;
             }
         })
-        .map((x) => indent(x + ",", 3))
+        .map((x) => indent(x + ",", 4))
         .join("\n");
     template += "\n";
-    template += indent("];\n", 2);
-    template += indent("if (", 2);
+    template += indent("];\n", 3);
+    template += indent("if (", 3);
     template += Object.keys(attrs)
         .map((attr) => `${attr} !== null`)
         .join(" && ");
     template += ") {\n";
     // return new this(attr_1, ..., attr_n)
-    template += indent("return new this(", 3);
+    template += indent("return new this(", 4);
     template += Object.keys(attrs).join(", ");
     template += ");\n";
+    template += indent("}\n", 3);
     template += indent("}\n", 2);
     template += indent("return new DeserializationError(\n", 2);
     template += indent(`"Failed to deserialize ${cls}: invalid data",\n`, 3);

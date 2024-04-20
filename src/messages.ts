@@ -60,9 +60,11 @@ export class RegistrationRequest {
         if (typeof x == "string") {
             x = JSON.parse(x);
         }
-        const [pi, T] = [parseNum(x.pi), parsePoint(x.T, cfg.curve)];
-        if (pi !== null && T !== null) {
-            return new this(pi, T);
+        if (!!x) {
+            const [pi, T] = [parseNum(x.pi), parsePoint(x.T, cfg.curve)];
+            if (pi !== null && T !== null) {
+                return new this(pi, T);
+            }
         }
         return new DeserializationError(
             "Failed to deserialize RegistrationRequest: invalid data",
@@ -91,14 +93,16 @@ export class UserCredentials {
         if (typeof x == "string") {
             x = JSON.parse(x);
         }
-        const [X3, PI3, pi, T] = [
-            parsePoint(x.X3, cfg.curve),
-            parseZKP(x.PI3),
-            parseNum(x.pi),
-            parsePoint(x.T, cfg.curve),
-        ];
-        if (X3 !== null && PI3 !== null && pi !== null && T !== null) {
-            return new this(X3, PI3, pi, T);
+        if (!!x) {
+            const [X3, PI3, pi, T] = [
+                parsePoint(x.X3, cfg.curve),
+                parseZKP(x.PI3),
+                parseNum(x.pi),
+                parsePoint(x.T, cfg.curve),
+            ];
+            if (X3 !== null && PI3 !== null && pi !== null && T !== null) {
+                return new this(X3, PI3, pi, T);
+            }
         }
         return new DeserializationError(
             "Failed to deserialize UserCredentials: invalid data",
@@ -129,14 +133,16 @@ export class AuthInitRequest {
         if (typeof x == "string") {
             x = JSON.parse(x);
         }
-        const [X1, X2, PI1, PI2] = [
-            parsePoint(x.X1, cfg.curve),
-            parsePoint(x.X2, cfg.curve),
-            parseZKP(x.PI1),
-            parseZKP(x.PI2),
-        ];
-        if (X1 !== null && X2 !== null && PI1 !== null && PI2 !== null) {
-            return new this(X1, X2, PI1, PI2);
+        if (!!x) {
+            const [X1, X2, PI1, PI2] = [
+                parsePoint(x.X1, cfg.curve),
+                parsePoint(x.X2, cfg.curve),
+                parseZKP(x.PI1),
+                parseZKP(x.PI2),
+            ];
+            if (X1 !== null && X2 !== null && PI1 !== null && PI2 !== null) {
+                return new this(X1, X2, PI1, PI2);
+            }
         }
         return new DeserializationError(
             "Failed to deserialize AuthInitRequest: invalid data",
@@ -201,48 +207,50 @@ export class AuthInitialValues {
         if (typeof x == "string") {
             x = JSON.parse(x);
         }
-        const [T, pi, x4, X1, X2, X3, X4, beta, PI1, PI2, PI3, PIBeta] = [
-            parsePoint(x.T, cfg.curve),
-            parseNum(x.pi),
-            parseNum(x.x4),
-            parsePoint(x.X1, cfg.curve),
-            parsePoint(x.X2, cfg.curve),
-            parsePoint(x.X3, cfg.curve),
-            parsePoint(x.X4, cfg.curve),
-            parsePoint(x.beta, cfg.curve),
-            parseZKP(x.PI1),
-            parseZKP(x.PI2),
-            parseZKP(x.PI3),
-            parseZKP(x.PIBeta),
-        ];
-        if (
-            T !== null &&
-            pi !== null &&
-            x4 !== null &&
-            X1 !== null &&
-            X2 !== null &&
-            X3 !== null &&
-            X4 !== null &&
-            beta !== null &&
-            PI1 !== null &&
-            PI2 !== null &&
-            PI3 !== null &&
-            PIBeta !== null
-        ) {
-            return new this(
-                T,
-                pi,
-                x4,
-                X1,
-                X2,
-                X3,
-                X4,
-                beta,
-                PI1,
-                PI2,
-                PI3,
-                PIBeta,
-            );
+        if (!!x) {
+            const [T, pi, x4, X1, X2, X3, X4, beta, PI1, PI2, PI3, PIBeta] = [
+                parsePoint(x.T, cfg.curve),
+                parseNum(x.pi),
+                parseNum(x.x4),
+                parsePoint(x.X1, cfg.curve),
+                parsePoint(x.X2, cfg.curve),
+                parsePoint(x.X3, cfg.curve),
+                parsePoint(x.X4, cfg.curve),
+                parsePoint(x.beta, cfg.curve),
+                parseZKP(x.PI1),
+                parseZKP(x.PI2),
+                parseZKP(x.PI3),
+                parseZKP(x.PIBeta),
+            ];
+            if (
+                T !== null &&
+                pi !== null &&
+                x4 !== null &&
+                X1 !== null &&
+                X2 !== null &&
+                X3 !== null &&
+                X4 !== null &&
+                beta !== null &&
+                PI1 !== null &&
+                PI2 !== null &&
+                PI3 !== null &&
+                PIBeta !== null
+            ) {
+                return new this(
+                    T,
+                    pi,
+                    x4,
+                    X1,
+                    X2,
+                    X3,
+                    X4,
+                    beta,
+                    PI1,
+                    PI2,
+                    PI3,
+                    PIBeta,
+                );
+            }
         }
         return new DeserializationError(
             "Failed to deserialize AuthInitialValues: invalid data",
@@ -300,23 +308,25 @@ export class AuthInitResponse {
         if (typeof x == "string") {
             x = JSON.parse(x);
         }
-        const [X3, X4, PI3, PI4, beta, PIBeta] = [
-            parsePoint(x.X3, cfg.curve),
-            parsePoint(x.X4, cfg.curve),
-            parseZKP(x.PI3),
-            parseZKP(x.PI4),
-            parsePoint(x.beta, cfg.curve),
-            parseZKP(x.PIBeta),
-        ];
-        if (
-            X3 !== null &&
-            X4 !== null &&
-            PI3 !== null &&
-            PI4 !== null &&
-            beta !== null &&
-            PIBeta !== null
-        ) {
-            return new this(X3, X4, PI3, PI4, beta, PIBeta);
+        if (!!x) {
+            const [X3, X4, PI3, PI4, beta, PIBeta] = [
+                parsePoint(x.X3, cfg.curve),
+                parsePoint(x.X4, cfg.curve),
+                parseZKP(x.PI3),
+                parseZKP(x.PI4),
+                parsePoint(x.beta, cfg.curve),
+                parseZKP(x.PIBeta),
+            ];
+            if (
+                X3 !== null &&
+                X4 !== null &&
+                PI3 !== null &&
+                PI4 !== null &&
+                beta !== null &&
+                PIBeta !== null
+            ) {
+                return new this(X3, X4, PI3, PI4, beta, PIBeta);
+            }
         }
         return new DeserializationError(
             "Failed to deserialize AuthInitResponse: invalid data",
@@ -351,13 +361,15 @@ export class AuthFinishRequest {
         if (typeof x == "string") {
             x = JSON.parse(x);
         }
-        const [alpha, PIAlpha, r] = [
-            parsePoint(x.alpha, cfg.curve),
-            parseZKP(x.PIAlpha),
-            parseNum(x.r),
-        ];
-        if (alpha !== null && PIAlpha !== null && r !== null) {
-            return new this(alpha, PIAlpha, r);
+        if (!!x) {
+            const [alpha, PIAlpha, r] = [
+                parsePoint(x.alpha, cfg.curve),
+                parseZKP(x.PIAlpha),
+                parseNum(x.r),
+            ];
+            if (alpha !== null && PIAlpha !== null && r !== null) {
+                return new this(alpha, PIAlpha, r);
+            }
         }
         return new DeserializationError(
             "Failed to deserialize AuthFinishRequest: invalid data",
