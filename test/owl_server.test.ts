@@ -103,7 +103,7 @@ describe("Test Owl server", () => {
             await server.register(ValidRegistrationRequest),
         ).not.toBeInstanceOf(Error);
     });
-    test("Initial authorisation is successful with valid inputs", async () => {
+    test("Initial authentication is successful with valid inputs", async () => {
         expect(
             await server.authInit(
                 "test-user",
@@ -112,7 +112,7 @@ describe("Test Owl server", () => {
             ),
         ).not.toBeInstanceOf(Error);
     });
-    test("Initial authorisation fails with incorrect username", async () => {
+    test("Initial authentication fails with incorrect username", async () => {
         expect(
             await server.authInit(
                 "wrong-username",
@@ -121,14 +121,14 @@ describe("Test Owl server", () => {
             ),
         ).toBeInstanceOf(ZKPVerificationFailure);
     });
-    test("Initial authorisation fails with invalid AuthInitRequest", async () => {
+    test("Initial authentication fails with invalid AuthInitRequest", async () => {
         const invalid = Object.assign({}, ValidAuthInitRequest);
         invalid.X1 = invalid.X2;
         expect(
             await server.authInit("test-user", invalid, ValidUserCredentials),
         ).toBeInstanceOf(ZKPVerificationFailure);
     });
-    test("Final authorisation is successful with valid inputs", async () => {
+    test("Final authentication is successful with valid inputs", async () => {
         expect(
             await server.authFinish(
                 "test-user",
@@ -137,7 +137,7 @@ describe("Test Owl server", () => {
             ),
         ).not.toBeInstanceOf(Error);
     });
-    test("Final authorisation fails when incorrect password is used", async () => {
+    test("Final authentication fails when incorrect password is used", async () => {
         const invalid = Object.assign({}, ValidAuthFinishRequest);
         invalid.r = invalid.PIAlpha.r;
         expect(
@@ -148,7 +148,7 @@ describe("Test Owl server", () => {
             ),
         ).toBeInstanceOf(AuthenticationFailure);
     });
-    test("Final authorisation fails with incorrect username", async () => {
+    test("Final authentication fails with incorrect username", async () => {
         expect(
             await server.authFinish(
                 "wrong-user",
@@ -157,7 +157,7 @@ describe("Test Owl server", () => {
             ),
         ).toBeInstanceOf(ZKPVerificationFailure);
     });
-    test("Final authorisation fails with invalid AuthFinishRequest", async () => {
+    test("Final authentication fails with invalid AuthFinishRequest", async () => {
         const invalid = Object.assign({}, ValidAuthFinishRequest);
         invalid.PIAlpha = ValidAuthInitRequest.PI1;
         expect(
@@ -168,7 +168,7 @@ describe("Test Owl server", () => {
             ),
         ).toBeInstanceOf(ZKPVerificationFailure);
     });
-    test("Final authorisation ZKP verification fails with invalid X1, X3 or X4 AuthInitialValues", async () => {
+    test("Final authentication ZKP verification fails with invalid X1, X3 or X4 AuthInitialValues", async () => {
         const invalid = Object.assign({}, ValidAuthInitialValues);
         invalid.X1 = invalid.X3;
         expect(
@@ -179,7 +179,7 @@ describe("Test Owl server", () => {
             ),
         ).toBeInstanceOf(ZKPVerificationFailure);
     });
-    test("Final authorisation authentication fails with other invalid AuthInitialValues", async () => {
+    test("Final authentication fails with other invalid AuthInitialValues", async () => {
         const invalid = Object.assign({}, ValidAuthInitialValues);
         invalid.PI1 = invalid.PI2;
         expect(

@@ -67,20 +67,20 @@ describe("Test Owl client", () => {
             await client.register("test-user", "secret-pass"),
         ).not.toBeInstanceOf(Error);
     });
-    test("Initial authorisation is successful", async () => {
+    test("Initial authentication is successful", async () => {
         const client = new OwlClient(cfg);
         expect(
             await client.authInit("username", "password"),
         ).not.toBeInstanceOf(Error);
     });
-    test("Final authorisation is successful with valid AuthInitResponse", async () => {
+    test("Final authentication is successful with valid AuthInitResponse", async () => {
         const client = new OwlClient(cfg);
         client.initValues = ValidClientInitVals; // mock successful AuthInit values
         expect(
             await client.authFinish(ValidAuthInitResponse),
         ).not.toBeInstanceOf(Error);
     });
-    test("Final authorisation fails with invalid ZKP AuthInitResponse", async () => {
+    test("Final authentication fails with invalid ZKP AuthInitResponse", async () => {
         const client = new OwlClient(cfg);
         client.initValues = ValidClientInitVals; // mock successful AuthInit values
         const invalid = Object.assign({}, ValidAuthInitResponse);
@@ -89,7 +89,7 @@ describe("Test Owl client", () => {
             ZKPVerificationFailure,
         );
     });
-    test("Final authorisation fails without initial authorisation", async () => {
+    test("Final authentication fails without initial authentication", async () => {
         const client = new OwlClient(cfg);
         expect(await client.authFinish(ValidAuthInitResponse)).toBeInstanceOf(
             UninitialisedClientError,
