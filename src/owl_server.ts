@@ -51,12 +51,7 @@ export class OwlServer extends OwlCommon {
         // beta = (X1+X2+X3) * (pi * x4)
         const beta = betaG.multiply(secret);
         // PIBeta = ZKP{pi * x4}
-        const PIBeta = await this.createZKP(
-            secret,
-            betaG,
-            beta,
-            this.serverId,
-        );
+        const PIBeta = await this.createZKP(secret, betaG, beta, this.serverId);
         // package values
         const response = new AuthInitResponse(X3, X4, PI3, PI4, beta, PIBeta);
         // prettier-ignore

@@ -1,9 +1,5 @@
 import { describe, expect, test } from "@jest/globals";
-import {
-    AuthFinishRequest,
-    Curves,
-    DeserializationError
-} from "../src";
+import { AuthFinishRequest, Curves, DeserializationError } from "../src";
 
 const cfg = {
     curve: Curves.P256,
